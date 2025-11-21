@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人力资源管理系统</title>
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>人力资源管理系统</h1>
+            <div class="user-info">
+                <span id="username" style="margin-right: 15px;">未登录</span>
+                <button id="logoutBtn" class="btn btn-secondary">退出</button>
+            </div>
+        </header>
+
+        <div style="display: flex; flex: 1; overflow: hidden;">
+            <nav class="sidebar">
+                <!-- 菜单将根据用户角色动态生成 -->
+                <div style="padding: 20px; text-align: center; color: #999;">
+                    <p>正在加载菜单...</p>
+                </div>
+            </nav>
+
+            <main class="main-content">
+                <div id="content-area">
+                    <div class="welcome">
+                        <h2>欢迎使用人力资源管理系统</h2>
+                        <p>请从左侧菜单选择功能模块</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="js/mock-data.js"></script>
+    <script src="js/mock-api.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/searchable-select.js"></script>
+    <script src="js/org-level1.js"></script>
+    <script src="js/org-level2.js"></script>
+    <script src="js/org-level3.js"></script>
+    <script src="js/position.js"></script>
+    <script src="js/salary-item.js"></script>
+    <script src="js/employee-archive.js"></script>
+    <script src="js/salary-standard.js"></script>
+    <script src="js/archive-register.js"></script>
+    <script src="js/archive-review.js"></script>
+    <script src="js/archive-query.js"></script>
+    <script src="js/archive-delete.js"></script>
+    <script src="js/salary-standard-register.js"></script>
+    <script src="js/salary-standard-review.js"></script>
+    <script src="js/salary-standard-query.js"></script>
+    <script src="js/salary-standard-update.js"></script>
+    <script src="js/salary-issuance.js"></script>
+    <script src="js/salary-issuance-register.js"></script>
+    <script src="js/salary-issuance-review.js"></script>
+    <script src="js/salary-issuance-query.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
+

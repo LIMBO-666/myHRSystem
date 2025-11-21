@@ -88,20 +88,75 @@
   "message": "登录成功",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expiresIn": 3600,
     "user": {
-      "userId": 2,
+      "userId": 1,
       "username": "hr01",
-      "realName": "王管理员",
-      "role": "HR_SPECIALIST"
+      "realName": "人事专员",
+      "role": "HR_SPECIALIST",
+      "email": "hr01@example.com",
+      "phone": "13800138001",
+      "status": "ACTIVE"
     }
   },
   "timestamp": 1699000000000
 }
 ```
 
-### 2. 用户登出
+### 2. 用户退出登录
+
+**接口地址**: `POST /api/auth/logout`
+
+**接口说明**: 用户退出登录，清除Token
+
+**权限要求**: 需要登录
+
+**请求头**: 
+- `Authorization: Bearer {token}`
+
+**响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "退出成功",
+  "data": null,
+  "timestamp": 1699000000000
+}
+```
+
+### 3. 获取当前用户信息
+
+**接口地址**: `GET /api/users/me`
+
+**接口说明**: 获取当前登录用户的信息
+
+**权限要求**: 需要登录
+
+**请求头**: 
+- `Authorization: Bearer {token}`
+
+**响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "userId": 1,
+    "username": "hr01",
+    "realName": "人事专员",
+    "role": "HR_SPECIALIST",
+    "email": "hr01@example.com",
+    "phone": "13800138001",
+    "status": "ACTIVE"
+  },
+  "timestamp": 1699000000000
+}
+```
+
+---
+
+## 系统管理
 
 **接口地址**: `POST /api/auth/logout`
 
@@ -189,6 +244,85 @@
     "phone": "13800138001",
     "status": "ACTIVE"
   },
+  "timestamp": 1699000000000
+}
+```
+
+### 6. 根据角色查询用户列表
+
+**接口地址**: `GET /api/users/by-role`
+
+**接口说明**: 根据角色查询用户列表
+
+**权限要求**: HR_MANAGER, SALARY_MANAGER
+
+**请求头**: 
+- `Authorization: Bearer {token}`
+
+**请求参数**:
+- `role` (String, 必填): 角色代码，如 HR_SPECIALIST, HR_MANAGER, SALARY_SPECIALIST, SALARY_MANAGER
+
+**响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "查询成功",
+  "data": [
+    {
+      "userId": 2,
+      "username": "hr01",
+      "realName": "人事专员",
+      "role": "HR_SPECIALIST",
+      "email": "hr01@example.com",
+      "phone": "13800138001",
+      "status": "ACTIVE"
+    },
+    {
+      "userId": 3,
+      "username": "hr02",
+      "realName": "人事专员2",
+      "role": "HR_SPECIALIST",
+      "email": "hr02@example.com",
+      "phone": "13800138002",
+      "status": "ACTIVE"
+    }
+  ],
+  "timestamp": 1699000000000
+}
+```
+
+### 7. 根据状态查询用户列表
+
+**接口地址**: `GET /api/users/by-status`
+
+**接口说明**: 根据状态查询用户列表
+
+**权限要求**: HR_MANAGER
+
+**请求头**: 
+- `Authorization: Bearer {token}`
+
+**请求参数**:
+- `status` (String, 必填): 用户状态，ACTIVE(激活) 或 INACTIVE(禁用)
+
+**响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "查询成功",
+  "data": [
+    {
+      "userId": 1,
+      "username": "admin",
+      "realName": "系统管理员",
+      "role": "HR_MANAGER",
+      "email": "admin@example.com",
+      "phone": "13800000001",
+      "status": "ACTIVE"
+    }
+  ],
   "timestamp": 1699000000000
 }
 ```
@@ -1170,7 +1304,7 @@
 
 **接口地址**: `PUT /api/employee-archives/{archiveId}`
 
-**接口说明**: 人事专员更新员工档案（档案编号、所属机构、职位不能修改）
+**接口说明**: 人事专员更新员工档案。档案编号、所属机构、职位不能修改，其他信息均可修改。变更后档案状态变为"待复核"，需要人事经理复核后才能生效。
 
 **权限要求**: HR_SPECIALIST
 
@@ -1182,15 +1316,70 @@
 
 **请求参数**:
 
+**注意**: 以下字段不能修改（即使传入也会被忽略）：
+- `archiveNumber` - 档案编号
+- `firstOrgId`, `secondOrgId`, `thirdOrgId` - 所属机构
+- `positionId` - 职位
+
+**可修改字段**:
+
 ```json
 {
   "name": "张明",
+  "gender": "MALE",
+  "idNumber": "110101199001011234",
+  "birthday": "1990-01-01",
+  "age": 33,
+  "nationality": "中国",
+  "placeOfBirth": "北京",
+  "ethnicity": "汉族",
+  "religiousBelief": "无",
+  "politicalStatus": "群众",
+  "educationLevel": "本科",
+  "major": "计算机科学与技术",
   "email": "zhangming_new@example.com",
+  "phone": "010-12345678",
+  "qq": "123456789",
   "mobile": "13900139000",
-  "salaryStandardId": 2,
-  "photoUrl": "https://example.com/photo_new.jpg"
+  "address": "北京市朝阳区xxx（更新）",
+  "postalCode": "100000",
+  "hobby": "阅读、编程、旅游",
+  "personalResume": "2010-2014 就读于XX大学...",
+  "familyRelationship": "父亲：XXX，母亲：XXX",
+  "remarks": "备注信息（更新）",
+  "jobTitle": "INTERMEDIATE",
+  "salaryStandardId": 2
 }
 ```
+
+**字段说明**:
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| name | String | 是 | 姓名 |
+| gender | String | 是 | 性别，MALE(男) 或 FEMALE(女) |
+| idNumber | String | 否 | 身份证号码 |
+| birthday | String | 否 | 出生日期，格式：yyyy-MM-dd |
+| age | Integer | 否 | 年龄，根据出生日期自动计算 |
+| nationality | String | 否 | 国籍 |
+| placeOfBirth | String | 否 | 出生地 |
+| ethnicity | String | 否 | 民族 |
+| religiousBelief | String | 否 | 宗教信仰 |
+| politicalStatus | String | 否 | 政治面貌 |
+| educationLevel | String | 否 | 学历 |
+| major | String | 否 | 专业 |
+| email | String | 否 | 邮箱 |
+| phone | String | 否 | 电话 |
+| qq | String | 否 | QQ号 |
+| mobile | String | 否 | 手机号 |
+| address | String | 否 | 住址 |
+| postalCode | String | 否 | 邮编 |
+| hobby | String | 否 | 爱好 |
+| personalResume | String | 否 | 个人履历 |
+| familyRelationship | String | 否 | 家庭关系信息 |
+| remarks | String | 否 | 备注 |
+| jobTitle | String | 否 | 职称，JUNIOR(初级), INTERMEDIATE(中级), SENIOR(高级) |
+| salaryStandardId | Long | 否 | 薪酬标准ID |
 
 **响应示例**:
 
@@ -1200,11 +1389,21 @@
   "message": "更新成功，等待复核",
   "data": {
     "archiveId": 1,
-    "status": "PENDING_REVIEW"
+    "archiveNumber": "20230101010101",
+    "status": "PENDING_REVIEW",
+    "updateTime": "2023-07-20T14:30:00"
   },
   "timestamp": 1699000000000
 }
 ```
+
+**业务规则**:
+
+1. 只有状态为"正常"（NORMAL）的档案才能进行变更
+2. 档案编号、所属机构、职位在变更时不能修改，如需修改应在调动管理模块中进行
+3. 变更后档案状态自动变为"待复核"（PENDING_REVIEW）
+4. 需要人事经理复核后，变更才能生效
+5. 如果修改了职称或薪酬标准，系统会自动更新关联的薪酬标准
 
 ### 人力资源档案删除管理
 
@@ -2013,8 +2212,17 @@
 - `PENDING_REVIEW`: 待复核
 - `EXECUTED`: 执行
 - `PAID`: 已付款
+- `REJECTED`: 已驳回
+
+#### 付款状态 (PaymentStatus)
+- `PENDING`: 待付款
+- `PAID`: 已付款
 
 #### 机构状态 (OrgStatus)
+- `ACTIVE`: 激活
+- `INACTIVE`: 禁用
+
+#### 用户状态 (UserStatus)
 - `ACTIVE`: 激活
 - `INACTIVE`: 禁用
 
