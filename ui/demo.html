@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端演示 - 人力资源管理系统</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .demo-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .demo-header h1 {
+            margin: 0 0 10px 0;
+        }
+        .demo-header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        .demo-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .demo-section h2 {
+            margin-top: 0;
+            color: #1890ff;
+            border-bottom: 2px solid #1890ff;
+            padding-bottom: 10px;
+        }
+        .demo-section ul {
+            line-height: 2;
+        }
+        .demo-section code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .btn-demo {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #1890ff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 10px 10px 10px 0;
+            transition: background-color 0.3s;
+        }
+        .btn-demo:hover {
+            background-color: #40a9ff;
+        }
+        .btn-demo-secondary {
+            background-color: #52c41a;
+        }
+        .btn-demo-secondary:hover {
+            background-color: #73d13d;
+        }
+        .info-box {
+            background: #e6f7ff;
+            border-left: 4px solid #1890ff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background: #fff7e6;
+            border-left: 4px solid #faad14;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-header">
+        <h1>🎉 人力资源管理系统 - 前端演示</h1>
+        <p>无需后端，即可体验完整的前端功能</p>
+    </div>
+
+    <div class="demo-section">
+        <h2>📋 功能说明</h2>
+        <p>这是一个完整的前端演示版本，使用Mock API模拟后端接口，您可以：</p>
+        <ul>
+            <li>✅ 登录系统（使用测试账号）</li>
+            <li>✅ 管理一级、二级、三级机构</li>
+            <li>✅ 设置职位信息</li>
+            <li>✅ 管理薪酬项目</li>
+            <li>✅ 所有数据保存在浏览器本地存储中</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <h2>🚀 快速开始</h2>
+        <div class="info-box">
+            <strong>方式一：直接打开</strong><br>
+            双击 <code>login.html</code> 文件即可在浏览器中打开
+        </div>
+        <div class="info-box">
+            <strong>方式二：使用本地服务器（推荐）</strong><br>
+            <code>python -m http.server 8000</code> 或 <code>npx http-server -p 8000</code><br>
+            然后访问 <code>http://localhost:8000/login.html</code>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🔑 测试账号</h2>
+        <p>您可以使用以下任意账号登录（密码都是 <code>password123</code>）：</p>
+        <ul>
+            <li><code>admin</code> - 系统管理员</li>
+            <li><code>hr01</code> - 人事专员</li>
+            <li><code>hr02</code> - 人事经理</li>
+            <li><code>salary01</code> - 薪酬专员</li>
+            <li><code>salary02</code> - 薪酬经理</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <h2>📁 文件结构</h2>
+        <ul>
+            <li><code>login.html</code> - 登录页面</li>
+            <li><code>index.html</code> - 主页面</li>
+            <li><code>css/common.css</code> - 样式文件</li>
+            <li><code>js/mock-api.js</code> - Mock API（模拟后端）</li>
+            <li><code>js/mock-data.js</code> - Mock 数据</li>
+            <li><code>js/api.js</code> - API接口封装</li>
+            <li><code>js/*.js</code> - 各功能模块</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <h2>✨ 功能特性</h2>
+        <ul>
+            <li>🎨 现代化UI设计，响应式布局</li>
+            <li>📱 适配不同屏幕尺寸</li>
+            <li>💾 数据持久化（使用LocalStorage）</li>
+            <li>⚡ 快速响应，流畅交互</li>
+            <li>🔔 友好的错误提示和成功提示</li>
+            <li>🎯 完整的CRUD操作</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <h2>🔄 切换到真实API</h2>
+        <p>当后端开发完成后，只需修改 <code>js/mock-api.js</code> 文件：</p>
+        <div class="warning-box">
+            <code>const USE_MOCK = false;</code><br>
+            将这一行改为 <code>false</code>，即可切换到真实的后端API
+        </div>
+    </div>
+
+    <div class="demo-section" style="text-align: center;">
+        <a href="login.html" class="btn-demo">🚀 开始体验</a>
+        <a href="index.html" class="btn-demo btn-demo-secondary">📊 直接进入系统</a>
+    </div>
+</body>
+</html>
+
