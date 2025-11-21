@@ -4,10 +4,47 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d5e2e6e7-46f5-4b74-ba83-776aae91eaa6" name="更改" comment="init ui">
+    <list default="true" id="d5e2e6e7-46f5-4b74-ba83-776aae91eaa6" name="更改" comment="feat add ui">
+      <change afterPath="$PROJECT_DIR$/ui/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/css/common.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/demo.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/index.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/api.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/archive-delete.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/archive-query.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/archive-register.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/archive-review.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/common.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/employee-archive.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/main.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/mock-api.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/mock-data.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/org-level1.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/org-level2.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/org-level3.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/position.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/salary-issuance-query.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/salary-issuance-register.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/salary-issuance-review.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/salary-issuance.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/salary-item.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/salary-standard-query.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/salary-standard-register.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/salary-standard-review.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/salary-standard-update.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/salary-standard.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/js/searchable-select.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/login.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/启动说明.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/快速开始.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ui/重置数据.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/接口使用情况分析.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/接口和字段检查报告.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/运行指南.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/API_DOCUMENTATION.md" beforeDir="false" afterPath="$PROJECT_DIR$/API_DOCUMENTATION.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/resources/application.yml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -150,6 +187,7 @@
       <workItem from="1763037383960" duration="68000" />
       <workItem from="1763134749358" duration="2572000" />
       <workItem from="1763194916289" duration="5081000" />
+      <workItem from="1763706592395" duration="895000" />
     </task>
     <task id="LOCAL-00001" summary="init ui">
       <option name="closed" value="true" />
@@ -167,7 +205,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761877831316</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="feat add ui">
+      <option name="closed" value="true" />
+      <created>1763707161939</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1763707161939</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -192,7 +238,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="init ui" />
-    <option name="LAST_COMMIT_MESSAGE" value="init ui" />
+    <MESSAGE value="feat add ui" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat add ui" />
   </component>
   <component name="VgoProject">
     <integration-enabled>false</integration-enabled>
