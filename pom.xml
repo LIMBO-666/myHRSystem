@@ -27,6 +27,7 @@
         <module>authorization-management</module>
         <module>human-resource-archive-management</module>
         <module>human-resource-salary-management</module>
+        <module>system-management</module>
     </modules>
     <scm>
         <connection/>

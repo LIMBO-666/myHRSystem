@@ -1,4 +1,4 @@
-package com.example.authorization.util;
+package com.example.common.util;
 
 import com.example.common.entity.User;
 import io.jsonwebtoken.Claims;
@@ -16,6 +16,7 @@ import java.util.Map;
 
 /**
  * JWT工具类
+ * 通用工具类，所有模块都可以使用
  */
 @Slf4j
 @Component
