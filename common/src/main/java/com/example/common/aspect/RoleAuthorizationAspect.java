@@ -1,7 +1,7 @@
-package com.example.authorization.aspect;
+package com.example.common.aspect;
 
 import com.example.common.annotation.RequireRole;
-import com.example.authorization.util.JwtUtil;
+import com.example.common.util.JwtUtil;
 import com.example.common.exception.AuthenticationException;
 import com.example.common.exception.AuthorizationException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +18,7 @@ import java.util.Arrays;
 /**
  * 角色权限切面
  * 用于拦截带有@RequireRole注解的方法，验证用户角色
+ * 通用切面，所有模块都可以使用
  */
 @Slf4j
 @Aspect

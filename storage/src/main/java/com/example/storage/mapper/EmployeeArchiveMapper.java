@@ -34,5 +34,6 @@ public interface EmployeeArchiveMapper extends BaseMapper<EmployeeArchive> {
      * @return 员工档案列表
      */
     List<EmployeeArchive> selectByPositionId(Long positionId);
+
 }
 

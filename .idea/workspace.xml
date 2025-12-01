@@ -4,18 +4,95 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d5e2e6e7-46f5-4b74-ba83-776aae91eaa6" name="更改" comment="init ui">
+    <list default="true" id="d5e2e6e7-46f5-4b74-ba83-776aae91eaa6" name="更改" comment="feat:Add authorization module,API docs,database sql">
+      <change afterPath="$PROJECT_DIR$/PROJECT_COMPLETION_REPORT.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/CreateEmployeeArchiveRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/CreateOrganizationRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/CreatePositionRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/CreateSalaryIssuanceRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/CreateSalaryItemRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/CreateSalaryStandardRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/DeleteEmployeeArchiveRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/EmployeeArchiveResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/OrganizationResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/PageResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/PendingRegistrationResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/PositionResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/ReviewApproveIssuanceRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/ReviewApproveRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/ReviewRejectRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/ReviewWithUpdateRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/SalaryIssuanceDetailRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/SalaryIssuanceDetailResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/SalaryIssuanceDetailUpdateRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/SalaryIssuanceResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/SalaryItemResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/SalaryStandardItemRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/SalaryStandardItemResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/SalaryStandardResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/UpdateEmployeeArchiveRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/UpdateOrganizationRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/UpdatePositionRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/UpdateSalaryItemRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/UpdateSalaryStandardRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/UploadPhotoResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/HumanResourceArchiveManagementApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/config/WebMvcConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/controller/EmployeeArchiveController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/service/EmployeeArchiveManagementService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/resources/application.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/human-resource-salary-management/src/main/java/com/example/human/resource/salary/management/HumanResourceSalaryManagementApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/human-resource-salary-management/src/main/java/com/example/human/resource/salary/management/controller/SalaryIssuanceController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/human-resource-salary-management/src/main/java/com/example/human/resource/salary/management/controller/SalaryStandardController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/human-resource-salary-management/src/main/resources/application.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/FileStorageService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/FileStorageServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/system-management/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/SystemManagementApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/OrganizationController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/PositionController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/SalaryItemController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/system-management/src/main/resources/application.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/aspect/RoleAuthorizationAspect.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/filter/JwtAuthenticationFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/filter/JwtAuthenticationFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/service/impl/AuthServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/service/impl/AuthServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/util/JwtUtil.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/common/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/human-resource-archive-management/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-archive-management/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/human-resource-salary-management/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-salary-management/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/mapper/EmployeeArchiveMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/mapper/EmployeeArchiveMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/EmployeeArchiveService.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/EmployeeArchiveService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/EmployeeArchiveServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/EmployeeArchiveServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/SalaryIssuanceServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/SalaryIssuanceServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/SalaryStandardServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/SalaryStandardServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/SalaryIssuanceService.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/SalaryIssuanceService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/SalaryStandardService.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/SalaryStandardService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/src/main/resources/database/myHRSystem.sql" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/resources/database/myHRSystem.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="authorrization" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -26,17 +103,22 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;git@github.com:/Yuukadesu/myHRSystem.git&quot;,
+    &quot;url&quot;: &quot;git@github.com:Yuukadesu/myHRSystem.git&quot;,
     &quot;accountId&quot;: &quot;e13d581f-18ad-4261-b95c-f41cd0e596fb&quot;
   }
 }</component>
   <component name="GoLibraries">
     <option name="indexEntireGoPath" value="true" />
   </component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
   <component name="MavenImportPreferences">
     <option name="generalSettings">
       <MavenGeneralSettings>
-        <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
+        <option name="customMavenHome" value="$USER_HOME$/Desktop/All_work/apache-maven-3.9.9" />
+        <option name="mavenHomeTypeForPersistence" value="CUSTOM" />
       </MavenGeneralSettings>
     </option>
   </component>
@@ -49,29 +131,53 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
-    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;17&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;onboarding.tips.debug.path&quot;: &quot;/Users/hanami/IdeaProjects/myHRSystem/human-resource-salary-management/src/main/java/com/exemple/Main.java&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.github.ui.GithubSettingsConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Maven.myHRSystem [clean].executor": "Run",
+    "Maven.myHRSystem [install].executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "git-widget-placeholder": "authorization",
+    "go.import.settings.migrated": "true",
+    "jdk.selected.JAVA_MODULE": "17",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "onboarding.tips.debug.path": "/Users/hanami/IdeaProjects/myHRSystem/system-management/src/main/java/com/example/Main.java",
+    "project.structure.last.edited": "模块",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "run.configurations.included.in.services": "true",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mysql"
+    ]
   }
-}</component>
-  <component name="RunManager">
+}]]></component>
+  <component name="RunAnythingCache">
+    <option name="myCommands">
+      <command value="mvn clean" />
+      <command value="mvn install" />
+    </option>
+  </component>
+  <component name="RunDashboard">
+    <option name="configurationTypes">
+      <set>
+        <option value="KtorApplicationConfigurationType" />
+        <option value="MicronautRunConfigurationType" />
+        <option value="QuarkusRunConfigurationType" />
+        <option value="SpringBootApplicationConfigurationType" />
+      </set>
+    </option>
+  </component>
+  <component name="RunManager" selected="Spring Boot.MyHrSystemApplication">
     <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="myHRSystem" />
       <working_directory value="$PROJECT_DIR$" />
@@ -91,9 +197,44 @@
       <framework value="gotest" />
       <method v="2" />
     </configuration>
+    <configuration name="AuthorizationManagementApplication (1)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="authorization-management" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.authorization.AuthorizationManagementApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="AuthorizationManagementApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="authorization-management" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.exemple.authorization.AuthorizationManagementApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HumanResourceArchiveManagementApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="human-resource-archive-management" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.human.resource.archive.management.HumanResourceArchiveManagementApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HumanResourceSalaryManagementApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="human-resource-salary-management" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.human.resource.salary.management.HumanResourceSalaryManagementApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="MyHrSystemApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="myHRSystem" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.exemple.myhrsystem.MyHrSystemApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SystemManagementApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="system-management" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.system.management.SystemManagementApplication" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -124,6 +265,10 @@
       <workItem from="1762155429820" duration="1121000" />
       <workItem from="1762163674719" duration="1688000" />
       <workItem from="1762225880127" duration="1989000" />
+      <workItem from="1762245494145" duration="18487000" />
+      <workItem from="1762822079610" duration="3430000" />
+      <workItem from="1762907103340" duration="9404000" />
+      <workItem from="1763458739300" duration="72000" />
     </task>
     <task id="LOCAL-00001" summary="init ui">
       <option name="closed" value="true" />
@@ -141,7 +286,23 @@
       <option name="project" value="LOCAL" />
       <updated>1761877831316</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="feat:Add pojo and storage">
+      <option name="closed" value="true" />
+      <created>1762247710471</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1762247710471</updated>
+    </task>
+    <task id="LOCAL-00004" summary="feat:Add authorization module,API docs,database sql">
+      <option name="closed" value="true" />
+      <created>1762481899196</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1762481899196</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -149,7 +310,9 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="init ui" />
-    <option name="LAST_COMMIT_MESSAGE" value="init ui" />
+    <MESSAGE value="feat:Add pojo and storage" />
+    <MESSAGE value="feat:Add authorization module,API docs,database sql" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat:Add authorization module,API docs,database sql" />
   </component>
   <component name="VgoProject">
     <integration-enabled>false</integration-enabled>
@@ -159,27 +322,17 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/common/src/main/java/com/exemple/Main.java</url>
-          <line>13</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/storage/src/main/java/com/exemple/Main.java</url>
-          <line>13</line>
-          <option name="timeStamp" value="2" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/authorization-management/src/main/java/com/exemple/Main.java</url>
+          <url>file://$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/management/Main.java</url>
           <line>13</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/exemple/Main.java</url>
+          <url>file://$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/Main.java</url>
           <line>13</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/human-resource-salary-management/src/main/java/com/exemple/Main.java</url>
+          <url>file://$PROJECT_DIR$/human-resource-salary-management/src/main/java/com/example/human/resource/salary/management/Main.java</url>
           <line>13</line>
           <option name="timeStamp" value="5" />
         </line-breakpoint>

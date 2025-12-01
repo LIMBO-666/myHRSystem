@@ -3,7 +3,7 @@ package com.example.authorization.service.impl;
 import com.example.authorization.dto.LoginRequest;
 import com.example.authorization.dto.LoginResponse;
 import com.example.authorization.service.AuthService;
-import com.example.authorization.util.JwtUtil;
+import com.example.common.util.JwtUtil;
 import com.example.common.entity.User;
 import com.example.common.enums.UserStatus;
 import com.example.common.exception.AuthenticationException;

@@ -1,6 +1,6 @@
 package com.example.authorization.filter;
 
-import com.example.authorization.util.JwtUtil;
+import com.example.common.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
