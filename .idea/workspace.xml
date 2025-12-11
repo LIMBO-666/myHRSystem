@@ -5,72 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d5e2e6e7-46f5-4b74-ba83-776aae91eaa6" name="更改" comment="feat add ui">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PROJECT_COMPLETION_REPORT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/AuthorizationManagementApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/AuthorizationManagementApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/controller/UserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/controller/UserController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/dto/LoginResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/dto/LoginResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/service/impl/AuthServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/service/impl/AuthServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/authorization-management/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/example/common/aspect/RoleAuthorizationAspect.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/aspect/RoleAuthorizationAspect.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/EmployeeArchiveResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/EmployeeArchiveResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/PendingRegistrationResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/PendingRegistrationResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/example/common/util/JwtUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/util/JwtUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/controller/EmployeeArchiveController.java" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/controller/EmployeeArchiveController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/service/EmployeeArchiveManagementService.java" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/service/EmployeeArchiveManagementService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/UpdateOrganizationRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/dto/UpdateOrganizationRequest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/human-resource-archive-management/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/human-resource-salary-management/src/main/java/com/example/human/resource/salary/management/controller/SalaryIssuanceController.java" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-salary-management/src/main/java/com/example/human/resource/salary/management/controller/SalaryIssuanceController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/human-resource-salary-management/src/main/java/com/example/human/resource/salary/management/controller/SalaryStandardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-salary-management/src/main/java/com/example/human/resource/salary/management/controller/SalaryStandardController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/human-resource-salary-management/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-salary-management/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/storage/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/EmployeeArchiveServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/EmployeeArchiveServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/SalaryIssuanceServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/SalaryIssuanceServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/SalaryIssuanceService.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/SalaryIssuanceService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/src/main/resources/database/myHRSystem.sql" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/resources/database/myHRSystem.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/OrganizationController.java" beforeDir="false" afterPath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/OrganizationController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/PositionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/PositionController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/SalaryItemController.java" beforeDir="false" afterPath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/SalaryItemController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/system-management/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/system-management/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/css/common.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/demo.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/index.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/api.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/archive-delete.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/archive-query.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/archive-register.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/archive-review.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/clear-mock.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/common.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/employee-archive.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/main.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/mock-api.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/mock-data.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/org-level1.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/org-level2.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/org-level3.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/position.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/salary-issuance-query.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/salary-issuance-register.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/salary-issuance-review.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/salary-issuance.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/salary-item.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/salary-standard-query.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/salary-standard-register.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/salary-standard-review.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/salary-standard-update.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/salary-standard.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/js/searchable-select.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/login.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/启动说明.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/快速开始.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui/重置数据.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/接口使用情况分析.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/接口和字段检查报告.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/运行指南.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui-react/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui-react/src/pages/system/OrgLevel3.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/pages/system/OrgLevel3.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -91,15 +34,19 @@
     &quot;assignee&quot;: &quot;Yuukadesu&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/LIMBO-666/myHRSystem.git&quot;,
-    &quot;accountId&quot;: &quot;f5d8ec55-00f6-4c4d-976f-813045e54019&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "git@github.com:Yuukadesu/myHRSystem.git",
+    "accountId": "e13d581f-18ad-4261-b95c-f41cd0e596fb"
   }
-}</component>
+}]]></component>
   <component name="GoLibraries">
     <option name="indexEntireGoPath" value="true" />
   </component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
   <component name="MavenImportPreferences">
     <option name="generalSettings">
       <MavenGeneralSettings>
@@ -119,49 +66,49 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.go.formatter.settings.were.checked": "true",
-    "RunOnceActivity.go.migrated.go.modules.settings": "true",
-    "Spring Boot.AuthorizationManagementApplication.executor": "Run",
-    "Spring Boot.HumanResourceArchiveManagementApplication.executor": "Run",
-    "Spring Boot.HumanResourceSalaryManagementApplication.executor": "Run",
-    "Spring Boot.MyHrSystemApplication.executor": "Run",
-    "Spring Boot.SystemManagementApplication.executor": "Run",
-    "deletionFromPopupRequiresConfirmation": "false",
-    "git-widget-placeholder": "feature/author",
-    "go.import.settings.migrated": "true",
-    "jdk.selected.JAVA_MODULE": "17",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "E:/myHRSystem/storage/src/main/resources/database/additional_org_position_data.sql",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "onboarding.tips.debug.path": "/Users/hanami/IdeaProjects/myHRSystem/human-resource-salary-management/src/main/java/com/exemple/Main.java",
-    "project.structure.last.edited": "模块",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "run.configurations.included.in.services": "true",
-    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
-    "vue.rearranger.settings.migration": "true",
-    "应用程序.PasswordHashGenerator.executor": "Run",
-    "应用程序.PasswordTest.executor": "Run",
-    "应用程序.PasswordVerify.executor": "Run"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;Spring Boot.AuthorizationManagementApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.HumanResourceArchiveManagementApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.HumanResourceSalaryManagementApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.MyHrSystemApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.SystemManagementApplication.executor&quot;: &quot;Run&quot;,
+    &quot;deletionFromPopupRequiresConfirmation&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;testacy&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;17&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/myHRSystem/storage/src/main/resources/database/additional_org_position_data.sql&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;/Users/hanami/IdeaProjects/myHRSystem/human-resource-salary-management/src/main/java/com/exemple/Main.java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.github.ui.GithubSettingsConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;,
+    &quot;应用程序.PasswordHashGenerator.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.PasswordTest.executor&quot;: &quot;Run&quot;,
+    &quot;应用程序.PasswordVerify.executor&quot;: &quot;Run&quot;
   },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "mysql"
+  &quot;keyToStringList&quot;: {
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;mysql&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RunDashboard">
     <option name="configurationTypes">
       <set>
@@ -254,16 +201,16 @@
       <list>
         <item itemvalue="Spring Boot.SystemManagementApplication" />
         <item itemvalue="Spring Boot.HumanResourceSalaryManagementApplication" />
-        <item itemvalue="Spring Boot.AuthorizationManagementApplication" />
         <item itemvalue="Spring Boot.HumanResourceArchiveManagementApplication" />
+        <item itemvalue="Spring Boot.AuthorizationManagementApplication" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-a94e463ab2e7-intellij.indexing.shared.core-IU-243.26053.27" />
-        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-IU-243.26053.27" />
+        <option value="bundled-jdk-9823dce3aa75-28b599e66164-intellij.indexing.shared.core-IU-242.26775.15" />
+        <option value="bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-IU-242.26775.15" />
       </set>
     </attachedChunks>
   </component>
@@ -305,6 +252,7 @@
       <workItem from="1764550503530" duration="14304000" />
       <workItem from="1764584653864" duration="4205000" />
       <workItem from="1764641852848" duration="10569000" />
+      <workItem from="1765114710683" duration="12000" />
     </task>
     <task id="LOCAL-00001" summary="init ui">
       <option name="closed" value="true" />

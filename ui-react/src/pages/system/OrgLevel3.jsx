@@ -6,7 +6,8 @@ import { organizationService } from '../../services/organizationService'
 const OrgLevel3 = () => {
   const [data, setData] = useState([])
   const [level1Orgs, setLevel1Orgs] = useState([])
-  const [level2Orgs, setLevel2Orgs] = useState([])
+  const [level2Orgs, setLevel2Orgs] = useState([]) // 所有二级机构，用于表格显示
+  const [modalLevel2Orgs, setModalLevel2Orgs] = useState([]) // 模态框中的二级机构列表
   const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingRecord, setEditingRecord] = useState(null)
@@ -39,7 +40,7 @@ const OrgLevel3 = () => {
     try {
       const response = await organizationService.getLevel2List(parentId)
       if (response.code === 200) {
-        setLevel2Orgs(response.data || [])
+        setModalLevel2Orgs(response.data || [])
       }
     } catch (error) {
       console.error('加载二级机构失败:', error)
@@ -52,9 +53,14 @@ const OrgLevel3 = () => {
       // 需要先加载一级机构，然后遍历加载所有三级机构
       const orgs = level1Orgs.length > 0 ? level1Orgs : await loadLevel1Orgs()
       const allData = []
+      const allLevel2Orgs = [] // 收集所有二级机构，用于表格显示
+      
       for (const org1 of orgs) {
         const level2Response = await organizationService.getLevel2List(org1.orgId)
         if (level2Response.code === 200 && level2Response.data) {
+          // 收集所有二级机构
+          allLevel2Orgs.push(...level2Response.data)
+          
           for (const org2 of level2Response.data) {
             const level3Response = await organizationService.getLevel3List(org2.orgId)
             if (level3Response.code === 200 && level3Response.data) {
@@ -64,6 +70,7 @@ const OrgLevel3 = () => {
         }
       }
       setData(allData)
+      setLevel2Orgs(allLevel2Orgs) // 设置所有二级机构，用于表格显示
     } catch (error) {
       message.error('加载数据失败')
     } finally {
@@ -74,13 +81,40 @@ const OrgLevel3 = () => {
   const handleAdd = () => {
     setEditingRecord(null)
     form.resetFields()
+    setModalLevel2Orgs([]) // 清空二级机构列表
     setModalVisible(true)
   }
 
   const handleEdit = (record) => {
     setEditingRecord(record)
-    form.setFieldsValue(record)
-    loadLevel2Orgs(record.parentId)
+    
+    // 找到当前三级机构的父机构（二级机构）
+    const parentLevel2 = level2Orgs.find(o => o.orgId === record.parentId)
+    if (parentLevel2) {
+      // 找到二级机构的父机构（一级机构）
+      const parentLevel1 = level1Orgs.find(o => o.orgId === parentLevel2.parentId)
+      
+      // 设置表单值
+      form.setFieldsValue({
+        firstOrgId: parentLevel1?.orgId,
+        parentId: record.parentId,
+        orgCode: record.orgCode,
+        orgName: record.orgName
+      })
+      
+      // 加载该一级机构下的二级机构列表
+      if (parentLevel1?.orgId) {
+        loadLevel2Orgs(parentLevel1.orgId)
+      }
+    } else {
+      // 如果找不到父机构，只设置基本信息
+      form.setFieldsValue({
+        parentId: record.parentId,
+        orgCode: record.orgCode,
+        orgName: record.orgName
+      })
+    }
+    
     setModalVisible(true)
   }
 
@@ -111,6 +145,9 @@ const OrgLevel3 = () => {
       if (response.code === 200) {
         message.success(editingRecord ? '更新成功' : '创建成功')
         setModalVisible(false)
+        setEditingRecord(null)
+        form.resetFields()
+        setModalLevel2Orgs([])
         loadData()
       } else {
         message.error(response.message || '操作失败')
@@ -122,7 +159,11 @@ const OrgLevel3 = () => {
 
   const handleLevel1Change = (value) => {
     form.setFieldsValue({ parentId: undefined })
-    loadLevel2Orgs(value)
+    if (value) {
+      loadLevel2Orgs(value)
+    } else {
+      setModalLevel2Orgs([])
+    }
   }
 
   const columns = [
@@ -195,7 +236,12 @@ const OrgLevel3 = () => {
         title={editingRecord ? '编辑三级机构' : '新增三级机构'}
         open={modalVisible}
         onOk={handleSubmit}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => {
+          setModalVisible(false)
+          setEditingRecord(null)
+          form.resetFields()
+          setModalLevel2Orgs([])
+        }}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -217,7 +263,7 @@ const OrgLevel3 = () => {
             rules={[{ required: true, message: '请选择二级机构' }]}
           >
             <Select placeholder="请先选择一级机构">
-              {level2Orgs.map(org => (
+              {modalLevel2Orgs.map(org => (
                 <Select.Option key={org.orgId} value={org.orgId}>
                   {org.orgName}
                 </Select.Option>

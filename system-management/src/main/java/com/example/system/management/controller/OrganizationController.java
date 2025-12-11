@@ -81,22 +81,37 @@ public class OrganizationController {
      */
     @PostMapping("/level1")
     public ApiResponse<OrganizationResponse> createFirstLevelOrg(@Valid @RequestBody CreateOrganizationRequest request) {
-        // 验证机构编号唯一性
-        ApiResponse<Void> validationResult = validateOrgCodeUnique(request.getOrgCode(), null, 1, null);
-        if (validationResult != null) {
-            return ApiResponse.error(validationResult.getCode(), validationResult.getMessage());
+        try {
+            // 验证机构编号唯一性
+            ApiResponse<Void> validationResult = validateOrgCodeUnique(request.getOrgCode(), null, 1, null);
+            if (validationResult != null) {
+                return ApiResponse.error(validationResult.getCode(), validationResult.getMessage());
+            }
+
+            Organization org = new Organization();
+            org.setOrgName(request.getOrgName());
+            org.setOrgCode(request.getOrgCode());
+            org.setOrgLevel(1);
+            org.setParentId(null);
+            org.setDescription(request.getDescription());
+            org.setStatus(OrgStatus.ACTIVE.getCode());
+
+            boolean saved = organizationService.save(org);
+            if (!saved) {
+                return ApiResponse.error(500, "创建失败");
+            }
+            
+            // 重新获取保存后的数据，确保包含自动生成的ID
+            Organization savedOrg = organizationService.getById(org.getOrgId());
+            if (savedOrg == null) {
+                return ApiResponse.error(500, "创建失败：无法获取保存后的数据");
+            }
+            
+            return ApiResponse.success("创建成功", convertToResponse(savedOrg));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.error(500, "创建失败: " + e.getMessage());
         }
-
-        Organization org = new Organization();
-        org.setOrgName(request.getOrgName());
-        org.setOrgCode(request.getOrgCode());
-        org.setOrgLevel(1);
-        org.setParentId(null);
-        org.setDescription(request.getDescription());
-        org.setStatus(OrgStatus.ACTIVE.getCode());
-
-        organizationService.save(org);
-        return ApiResponse.success("创建成功", convertToResponse(org));
     }
 
     /**
@@ -104,32 +119,47 @@ public class OrganizationController {
      */
     @PostMapping("/level2")
     public ApiResponse<OrganizationResponse> createSecondLevelOrg(@Valid @RequestBody CreateOrganizationRequest request) {
-        if (request.getParentId() == null) {
-            return ApiResponse.error(400, "二级机构必须指定父机构（一级机构）");
+        try {
+            if (request.getParentId() == null) {
+                return ApiResponse.error(400, "二级机构必须指定父机构（一级机构）");
+            }
+
+            // 验证父机构是一级机构
+            Organization parentOrg = organizationService.getById(request.getParentId());
+            if (parentOrg == null || !parentOrg.getOrgLevel().equals(1)) {
+                return ApiResponse.error(400, "父机构必须是一级机构");
+            }
+
+            // 验证机构编号唯一性
+            ApiResponse<Void> validationResult = validateOrgCodeUnique(request.getOrgCode(), null, 2, request.getParentId());
+            if (validationResult != null) {
+                return ApiResponse.error(validationResult.getCode(), validationResult.getMessage());
+            }
+
+            Organization org = new Organization();
+            org.setOrgName(request.getOrgName());
+            org.setOrgCode(request.getOrgCode());
+            org.setOrgLevel(2);
+            org.setParentId(request.getParentId());
+            org.setDescription(request.getDescription());
+            org.setStatus(OrgStatus.ACTIVE.getCode());
+
+            boolean saved = organizationService.save(org);
+            if (!saved) {
+                return ApiResponse.error(500, "创建失败");
+            }
+            
+            // 重新获取保存后的数据，确保包含自动生成的ID
+            Organization savedOrg = organizationService.getById(org.getOrgId());
+            if (savedOrg == null) {
+                return ApiResponse.error(500, "创建失败：无法获取保存后的数据");
+            }
+            
+            return ApiResponse.success("创建成功", convertToResponse(savedOrg));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.error(500, "创建失败: " + e.getMessage());
         }
-
-        // 验证父机构是一级机构
-        Organization parentOrg = organizationService.getById(request.getParentId());
-        if (parentOrg == null || !parentOrg.getOrgLevel().equals(1)) {
-            return ApiResponse.error(400, "父机构必须是一级机构");
-        }
-
-        // 验证机构编号唯一性
-        ApiResponse<Void> validationResult = validateOrgCodeUnique(request.getOrgCode(), null, 2, request.getParentId());
-        if (validationResult != null) {
-            return ApiResponse.error(validationResult.getCode(), validationResult.getMessage());
-        }
-
-        Organization org = new Organization();
-        org.setOrgName(request.getOrgName());
-        org.setOrgCode(request.getOrgCode());
-        org.setOrgLevel(2);
-        org.setParentId(request.getParentId());
-        org.setDescription(request.getDescription());
-        org.setStatus(OrgStatus.ACTIVE.getCode());
-
-        organizationService.save(org);
-        return ApiResponse.success("创建成功", convertToResponse(org));
     }
 
     /**
@@ -137,32 +167,47 @@ public class OrganizationController {
      */
     @PostMapping("/level3")
     public ApiResponse<OrganizationResponse> createThirdLevelOrg(@Valid @RequestBody CreateOrganizationRequest request) {
-        if (request.getParentId() == null) {
-            return ApiResponse.error(400, "三级机构必须指定父机构（二级机构）");
+        try {
+            if (request.getParentId() == null) {
+                return ApiResponse.error(400, "三级机构必须指定父机构（二级机构）");
+            }
+
+            // 验证父机构是二级机构
+            Organization parentOrg = organizationService.getById(request.getParentId());
+            if (parentOrg == null || !parentOrg.getOrgLevel().equals(2)) {
+                return ApiResponse.error(400, "父机构必须是二级机构");
+            }
+
+            // 验证机构编号唯一性
+            ApiResponse<Void> validationResult = validateOrgCodeUnique(request.getOrgCode(), null, 3, request.getParentId());
+            if (validationResult != null) {
+                return ApiResponse.error(validationResult.getCode(), validationResult.getMessage());
+            }
+
+            Organization org = new Organization();
+            org.setOrgName(request.getOrgName());
+            org.setOrgCode(request.getOrgCode());
+            org.setOrgLevel(3);
+            org.setParentId(request.getParentId());
+            org.setDescription(request.getDescription());
+            org.setStatus(OrgStatus.ACTIVE.getCode());
+
+            boolean saved = organizationService.save(org);
+            if (!saved) {
+                return ApiResponse.error(500, "创建失败");
+            }
+            
+            // 重新获取保存后的数据，确保包含自动生成的ID
+            Organization savedOrg = organizationService.getById(org.getOrgId());
+            if (savedOrg == null) {
+                return ApiResponse.error(500, "创建失败：无法获取保存后的数据");
+            }
+            
+            return ApiResponse.success("创建成功", convertToResponse(savedOrg));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.error(500, "创建失败: " + e.getMessage());
         }
-
-        // 验证父机构是二级机构
-        Organization parentOrg = organizationService.getById(request.getParentId());
-        if (parentOrg == null || !parentOrg.getOrgLevel().equals(2)) {
-            return ApiResponse.error(400, "父机构必须是二级机构");
-        }
-
-        // 验证机构编号唯一性
-        ApiResponse<Void> validationResult = validateOrgCodeUnique(request.getOrgCode(), null, 3, request.getParentId());
-        if (validationResult != null) {
-            return ApiResponse.error(validationResult.getCode(), validationResult.getMessage());
-        }
-
-        Organization org = new Organization();
-        org.setOrgName(request.getOrgName());
-        org.setOrgCode(request.getOrgCode());
-        org.setOrgLevel(3);
-        org.setParentId(request.getParentId());
-        org.setDescription(request.getDescription());
-        org.setStatus(OrgStatus.ACTIVE.getCode());
-
-        organizationService.save(org);
-        return ApiResponse.success("创建成功", convertToResponse(org));
     }
 
     /**
@@ -175,6 +220,21 @@ public class OrganizationController {
             Organization org = organizationService.getById(orgId);
             if (org == null) {
                 return ApiResponse.error(404, "机构不存在");
+            }
+
+            // 更新机构代码（如果提供）
+            if (request.getOrgCode() != null && !request.getOrgCode().trim().isEmpty()) {
+                String newOrgCode = request.getOrgCode().trim();
+                // 如果机构代码发生变化，需要验证唯一性并更新
+                if (!newOrgCode.equals(org.getOrgCode())) {
+                    ApiResponse<Void> validationResult = validateOrgCodeUnique(
+                            newOrgCode, orgId, org.getOrgLevel(), org.getParentId());
+                    if (validationResult != null) {
+                        return ApiResponse.error(validationResult.getCode(), validationResult.getMessage());
+                    }
+                    org.setOrgCode(newOrgCode);
+                }
+                // 注意：如果机构代码没有变化，不更新，避免不必要的数据库操作
             }
 
             // 更新机构名称（如果提供）
