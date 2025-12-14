@@ -39,19 +39,24 @@ const ArchiveReview = () => {
     loadData()
   }, [])
 
-  const loadData = async () => {
+  const loadData = async (pageNum, pageSizeNum) => {
     setLoading(true)
     try {
+      const page = pageNum !== undefined && pageNum !== null ? Number(pageNum) : pagination.current
+      const size = pageSizeNum !== undefined && pageSizeNum !== null ? Number(pageSizeNum) : pagination.pageSize
+      
       const response = await employeeArchiveService.getPendingReviewList({
-        page: pagination.current,
-        size: pagination.pageSize
+        page: page > 0 ? page : 1,
+        size: size > 0 ? size : 10
       })
       if (response.code === 200) {
         setData(response.data?.list || [])
-        setPagination({
-          ...pagination,
+        setPagination(prev => ({
+          ...prev,
+          current: page > 0 ? page : 1,
+          pageSize: size > 0 ? size : 10,
           total: response.data?.total || 0
-        })
+        }))
       }
     } catch (error) {
       message.error('加载数据失败')
@@ -60,9 +65,30 @@ const ArchiveReview = () => {
     }
   }
 
-  const handleTableChange = (newPagination) => {
-    setPagination(newPagination)
-    loadData()
+  const handleTableChange = (newPagination, filters, sorter) => {
+    // 从newPagination对象中获取页码和每页数量
+    let page, size
+    if (typeof newPagination === 'object' && newPagination !== null) {
+      page = Number(newPagination.current) || pagination.current
+      size = Number(newPagination.pageSize) || pagination.pageSize
+    } else if (typeof newPagination === 'number') {
+      page = newPagination
+      size = pagination.pageSize
+    } else {
+      page = pagination.current
+      size = pagination.pageSize
+    }
+    
+    page = page > 0 ? page : 1
+    size = size > 0 ? size : 10
+    
+    setPagination(prev => ({
+      ...prev,
+      current: page,
+      pageSize: size
+    }))
+    
+    loadData(page, size)
   }
 
   const handleReview = async (record) => {
@@ -226,8 +252,16 @@ const ArchiveReview = () => {
         dataSource={data}
         loading={loading}
         rowKey="archiveId"
-        pagination={pagination}
-        onChange={handleTableChange}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          showSizeChanger: false,
+          showTotal: (total) => `共 ${total} 条`,
+          onChange: (page, pageSize) => {
+            handleTableChange({ current: page, pageSize: pageSize })
+          }
+        }}
       />
 
       <Modal

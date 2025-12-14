@@ -117,11 +117,12 @@ public interface SalaryIssuanceService extends IService<SalaryIssuance> {
     /**
      * 获取待复核薪酬发放单分页列表
      *
+     * @param issuanceMonth 发放月份（可选，格式：yyyy-MM）
      * @param page 页码
      * @param size 每页数量
      * @return 分页结果
      */
-    IPage<SalaryIssuance> getPendingReviewPage(int page, int size);
+    IPage<SalaryIssuance> getPendingReviewPage(String issuanceMonth, int page, int size);
 
     /**
      * 获取用于登记的员工明细列表

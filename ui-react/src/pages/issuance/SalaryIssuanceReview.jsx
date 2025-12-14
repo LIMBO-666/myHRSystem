@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Table, Button, message, Card, Typography, InputNumber, Space, Tag } from 'antd'
+import { Table, Button, message, Card, Typography, InputNumber, Space, Tag, DatePicker } from 'antd'
 import { CheckCircleOutlined, EyeOutlined, ArrowLeftOutlined, CheckOutlined } from '@ant-design/icons'
 import { salaryIssuanceService } from '../../services/salaryIssuanceService'
+import { salaryItemService } from '../../services/salaryItemService'
 import dayjs from 'dayjs'
 import './SalaryIssuanceReview.css'
 
@@ -13,6 +14,8 @@ const SalaryIssuanceReview = () => {
   const [showDetail, setShowDetail] = useState(false)
   const [currentRecord, setCurrentRecord] = useState(null)
   const [employeeDetails, setEmployeeDetails] = useState([])
+  const [salaryItems, setSalaryItems] = useState([]) // 所有薪酬项目列表
+  const [selectedMonth, setSelectedMonth] = useState(dayjs()) // 选中的月份，默认为当前月份
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -21,12 +24,28 @@ const SalaryIssuanceReview = () => {
 
   useEffect(() => {
     loadData(1, 10)
-  }, [])
+    loadSalaryItems()
+  }, [selectedMonth])
+
+  const loadSalaryItems = async () => {
+    try {
+      const response = await salaryItemService.getList()
+      if (response.code === 200) {
+        // 按排序顺序排序
+        const sortedItems = (response.data || []).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+        setSalaryItems(sortedItems)
+      }
+    } catch (error) {
+      console.error('加载薪酬项目失败:', error)
+    }
+  }
 
   const loadData = async (page = pagination.current, pageSize = pagination.pageSize) => {
     setLoading(true)
     try {
+      const issuanceMonth = selectedMonth ? selectedMonth.format('YYYY-MM') : null
       const response = await salaryIssuanceService.getPendingReviewList({
+        issuanceMonth: issuanceMonth,
         page: page,
         size: pageSize
       })
@@ -72,7 +91,8 @@ const SalaryIssuanceReview = () => {
           deductionAmount: parseFloat(detail.deductionAmount) || 0,
           totalIncome: parseFloat(detail.totalIncome) || 0,
           totalDeduction: parseFloat(detail.totalDeduction) || 0,
-          netPay: parseFloat(detail.netPay) || 0
+          netPay: parseFloat(detail.netPay) || 0,
+          dynamicItems: detail.dynamicItems || {} // 动态薪酬项目
         }))
         
         setEmployeeDetails(details)
@@ -89,22 +109,81 @@ const SalaryIssuanceReview = () => {
     }
   }
 
+  // 计算保险和公积金金额
+  const calculateInsuranceAmount = (itemCode, basicSalary) => {
+    if (!basicSalary || basicSalary <= 0) {
+      return 0
+    }
+    const base = parseFloat(basicSalary)
+    switch (itemCode) {
+      case 'S006': // 养老保险 = 基本工资 * 8%
+        return base * 0.08
+      case 'S007': // 医疗保险 = 基本工资 * 2% + 3元
+        return base * 0.02 + 3
+      case 'S008': // 失业保险 = 基本工资 * 0.5%
+        return base * 0.005
+      case 'S009': // 住房公积金 = 基本工资 * 8%
+        return base * 0.08
+      default:
+        return 0
+    }
+  }
+
+  // 获取保险或公积金金额（如果为空则计算）
+  const getInsuranceAmount = (detail, field, itemCode) => {
+    const value = detail[field]
+    if (value && parseFloat(value) > 0) {
+      return parseFloat(value)
+    }
+    return calculateInsuranceAmount(itemCode, detail.basicSalary)
+  }
+
   const calculateTotals = (detail) => {
-    // 总收入 = 基本工资 + 绩效奖金 + 交通补贴 + 餐费补贴 + 奖励金额
+    // 计算动态收入项目的总和
+    let dynamicIncome = 0
+    if (detail.dynamicItems) {
+      Object.keys(detail.dynamicItems).forEach(itemCode => {
+        const item = salaryItems.find(i => i.itemCode === itemCode)
+        if (item && item.itemType === 'INCOME') {
+          dynamicIncome += parseFloat(detail.dynamicItems[itemCode]) || 0
+        }
+      })
+    }
+    
+    // 总收入 = 基本工资 + 绩效奖金 + 交通补贴 + 餐费补贴 + 奖励金额 + 动态收入项目
     detail.totalIncome = 
       (detail.basicSalary || 0) +
       (detail.performanceBonus || 0) +
       (detail.transportationAllowance || 0) +
       (detail.mealAllowance || 0) +
-      (detail.awardAmount || 0)
+      (detail.awardAmount || 0) +
+      dynamicIncome
 
-    // 总扣除 = 养老保险 + 医疗保险 + 失业保险 + 住房公积金 + 应扣金额
+    // 获取保险和公积金金额（如果为空则计算）
+    const pensionInsurance = getInsuranceAmount(detail, 'pensionInsurance', 'S006')
+    const medicalInsurance = getInsuranceAmount(detail, 'medicalInsurance', 'S007')
+    const unemploymentInsurance = getInsuranceAmount(detail, 'unemploymentInsurance', 'S008')
+    const housingFund = getInsuranceAmount(detail, 'housingFund', 'S009')
+
+    // 计算动态扣除项目的总和
+    let dynamicDeduction = 0
+    if (detail.dynamicItems) {
+      Object.keys(detail.dynamicItems).forEach(itemCode => {
+        const item = salaryItems.find(i => i.itemCode === itemCode)
+        if (item && item.itemType === 'DEDUCTION') {
+          dynamicDeduction += parseFloat(detail.dynamicItems[itemCode]) || 0
+        }
+      })
+    }
+
+    // 总扣除 = 养老保险 + 医疗保险 + 失业保险 + 住房公积金 + 应扣金额 + 动态扣除项目
     detail.totalDeduction =
-      (detail.pensionInsurance || 0) +
-      (detail.medicalInsurance || 0) +
-      (detail.unemploymentInsurance || 0) +
-      (detail.housingFund || 0) +
-      (detail.deductionAmount || 0)
+      pensionInsurance +
+      medicalInsurance +
+      unemploymentInsurance +
+      housingFund +
+      (detail.deductionAmount || 0) +
+      dynamicDeduction
 
     // 实发金额 = 总收入 - 总扣除
     detail.netPay = detail.totalIncome - detail.totalDeduction
@@ -147,8 +226,24 @@ const SalaryIssuanceReview = () => {
   }
 
 
-  const handleTableChange = (newPagination) => {
-    loadData(newPagination.current, newPagination.pageSize)
+  const handleTableChange = (newPagination, filters, sorter) => {
+    // 从newPagination对象中获取页码和每页数量
+    let page, size
+    if (typeof newPagination === 'object' && newPagination !== null) {
+      page = Number(newPagination.current) || pagination.current
+      size = Number(newPagination.pageSize) || pagination.pageSize
+    } else if (typeof newPagination === 'number') {
+      page = newPagination
+      size = pagination.pageSize
+    } else {
+      page = pagination.current
+      size = pagination.pageSize
+    }
+    
+    page = page > 0 ? page : 1
+    size = size > 0 ? size : 10
+    
+    loadData(page, size)
   }
 
   const columns = [
@@ -173,6 +268,16 @@ const SalaryIssuanceReview = () => {
       dataIndex: 'totalBasicSalary',
       key: 'totalBasicSalary',
       render: (amount) => amount ? `¥${parseFloat(amount).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'
+    },
+    {
+      title: '发放月份',
+      dataIndex: 'issuanceMonth',
+      key: 'issuanceMonth',
+      width: 120,
+      render: (date) => {
+        if (!date) return '-'
+        return dayjs(date).format('YYYY-MM')
+      }
     },
     {
       title: '登记时间',
@@ -201,128 +306,230 @@ const SalaryIssuanceReview = () => {
     }
   ]
 
-  // 详情页表格列
-  const detailColumns = [
-    {
-      title: '员工编号',
-      dataIndex: 'employeeNumber',
-      key: 'employeeNumber',
-      width: 100
-    },
-    {
-      title: '姓名',
-      dataIndex: 'employeeName',
-      key: 'employeeName',
-      width: 100
-    },
-    {
-      title: '职位',
-      dataIndex: 'positionName',
-      key: 'positionName',
-      width: 120
-    },
-    {
-      title: '基本工资',
-      dataIndex: 'basicSalary',
-      key: 'basicSalary',
-      width: 120,
-      render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
-    },
-    {
-      title: '绩效奖金',
-      dataIndex: 'performanceBonus',
-      key: 'performanceBonus',
-      width: 120,
-      render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
-    },
-    {
-      title: '交通补贴',
-      dataIndex: 'transportationAllowance',
-      key: 'transportationAllowance',
-      width: 120,
-      render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
-    },
-    {
-      title: '餐费补贴',
-      dataIndex: 'mealAllowance',
-      key: 'mealAllowance',
-      width: 120,
-      render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
-    },
-    {
-      title: '养老保险',
-      dataIndex: 'pensionInsurance',
-      key: 'pensionInsurance',
-      width: 120,
-      render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
-    },
-    {
-      title: '医疗保险',
-      dataIndex: 'medicalInsurance',
-      key: 'medicalInsurance',
-      width: 120,
-      render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
-    },
-    {
-      title: '失业保险',
-      dataIndex: 'unemploymentInsurance',
-      key: 'unemploymentInsurance',
-      width: 120,
-      render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
-    },
-    {
-      title: '住房公积金',
-      dataIndex: 'housingFund',
-      key: 'housingFund',
-      width: 120,
-      render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
-    },
-    {
-      title: '奖励金额',
-      dataIndex: 'awardAmount',
-      key: 'awardAmount',
-      width: 150,
-      render: (amount, record, index) => (
-        <InputNumber
-          style={{ width: '100%' }}
-          value={amount}
-          min={0}
-          precision={2}
-          formatter={value => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-          parser={value => value.replace(/¥\s?|(,*)/g, '')}
-          onChange={(value) => handleAmountChange(index, 'awardAmount', value)}
-        />
-      )
-    },
-    {
-      title: '应扣金额',
-      dataIndex: 'deductionAmount',
-      key: 'deductionAmount',
-      width: 150,
-      render: (amount, record, index) => (
-        <InputNumber
-          style={{ width: '100%' }}
-          value={amount}
-          min={0}
-          precision={2}
-          formatter={value => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-          parser={value => value.replace(/¥\s?|(,*)/g, '')}
-          onChange={(value) => handleAmountChange(index, 'deductionAmount', value)}
-        />
-      )
-    },
-    {
-      title: '实发金额',
-      dataIndex: 'netPay',
-      key: 'netPay',
-      width: 120,
-      render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
-    }
-  ]
+  // 构建动态表格列（包括固定列和动态列）
+  const buildDetailColumns = () => {
+    const fixedColumns = [
+      {
+        title: '员工编号',
+        dataIndex: 'employeeNumber',
+        key: 'employeeNumber',
+        width: 100
+      },
+      {
+        title: '姓名',
+        dataIndex: 'employeeName',
+        key: 'employeeName',
+        width: 100
+      },
+      {
+        title: '职位',
+        dataIndex: 'positionName',
+        key: 'positionName',
+        width: 120
+      },
+      {
+        title: '基本工资',
+        dataIndex: 'basicSalary',
+        key: 'basicSalary',
+        width: 120,
+        render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
+      },
+      {
+        title: '绩效奖金',
+        dataIndex: 'performanceBonus',
+        key: 'performanceBonus',
+        width: 120,
+        render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
+      },
+      {
+        title: '交通补贴',
+        dataIndex: 'transportationAllowance',
+        key: 'transportationAllowance',
+        width: 120,
+        render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
+      },
+      {
+        title: '餐费补贴',
+        dataIndex: 'mealAllowance',
+        key: 'mealAllowance',
+        width: 120,
+        render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
+      }
+    ]
+
+    // 获取发放月份，用于过滤薪酬项目
+    const issuanceMonth = currentRecord?.issuanceMonth ? dayjs(currentRecord.issuanceMonth) : null
+    const nextMonthStart = issuanceMonth ? issuanceMonth.add(1, 'month').startOf('month') : null
+
+    // 添加动态收入项目列（排除已映射的固定字段）
+    // 只显示在发放月份之前创建的薪酬项目
+    const fixedIncomeCodes = ['S001', 'S002', 'S003', 'S004']
+    const dynamicIncomeColumns = salaryItems
+      .filter(item => {
+        // 过滤固定字段
+        if (item.itemType !== 'INCOME' || fixedIncomeCodes.includes(item.itemCode)) {
+          return false
+        }
+        // 如果指定了发放月份，只显示在该月份之前创建的薪酬项目
+        if (nextMonthStart && item.createTime) {
+          const itemCreateTime = dayjs(item.createTime)
+          return itemCreateTime.isBefore(nextMonthStart)
+        }
+        return true
+      })
+      .map(item => {
+        return {
+          title: item.itemName,
+          key: `dynamic_${item.itemCode}`,
+          width: 120,
+          render: (_, record) => {
+            const amount = record.dynamicItems?.[item.itemCode] || 0
+            return amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
+          }
+        }
+      })
+
+    const fixedDeductionColumns = [
+      {
+        title: '养老保险',
+        dataIndex: 'pensionInsurance',
+        key: 'pensionInsurance',
+        width: 120,
+        render: (amount, record) => {
+          const value = getInsuranceAmount(record, 'pensionInsurance', 'S006')
+          return value > 0 ? `¥${value.toFixed(2)}` : '-'
+        }
+      },
+      {
+        title: '医疗保险',
+        dataIndex: 'medicalInsurance',
+        key: 'medicalInsurance',
+        width: 120,
+        render: (amount, record) => {
+          const value = getInsuranceAmount(record, 'medicalInsurance', 'S007')
+          return value > 0 ? `¥${value.toFixed(2)}` : '-'
+        }
+      },
+      {
+        title: '失业保险',
+        dataIndex: 'unemploymentInsurance',
+        key: 'unemploymentInsurance',
+        width: 120,
+        render: (amount, record) => {
+          const value = getInsuranceAmount(record, 'unemploymentInsurance', 'S008')
+          return value > 0 ? `¥${value.toFixed(2)}` : '-'
+        }
+      },
+      {
+        title: '住房公积金',
+        dataIndex: 'housingFund',
+        key: 'housingFund',
+        width: 120,
+        render: (amount, record) => {
+          const value = getInsuranceAmount(record, 'housingFund', 'S009')
+          return value > 0 ? `¥${value.toFixed(2)}` : '-'
+        }
+      }
+    ]
+
+    // 添加动态扣除项目列（排除已映射的固定字段）
+    // 只显示在发放月份之前创建的薪酬项目
+    const fixedDeductionCodes = ['S006', 'S007', 'S008', 'S009']
+    const dynamicDeductionColumns = salaryItems
+      .filter(item => {
+        // 过滤固定字段
+        if (item.itemType !== 'DEDUCTION' || fixedDeductionCodes.includes(item.itemCode)) {
+          return false
+        }
+        // 如果指定了发放月份，只显示在该月份之前创建的薪酬项目
+        if (nextMonthStart && item.createTime) {
+          const itemCreateTime = dayjs(item.createTime)
+          return itemCreateTime.isBefore(nextMonthStart)
+        }
+        return true
+      })
+      .map(item => {
+        return {
+          title: item.itemName,
+          key: `dynamic_${item.itemCode}`,
+          width: 120,
+          render: (_, record) => {
+            const amount = record.dynamicItems?.[item.itemCode] || 0
+            return amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
+          }
+        }
+      })
+
+    const otherColumns = [
+      {
+        title: '奖励金额',
+        dataIndex: 'awardAmount',
+        key: 'awardAmount',
+        width: 150,
+        render: (amount, record, index) => (
+          <InputNumber
+            style={{ width: '100%' }}
+            value={amount}
+            min={0}
+            precision={2}
+            formatter={value => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            parser={value => value.replace(/¥\s?|(,*)/g, '')}
+            onChange={(value) => handleAmountChange(index, 'awardAmount', value)}
+          />
+        )
+      },
+      {
+        title: '应扣金额',
+        dataIndex: 'deductionAmount',
+        key: 'deductionAmount',
+        width: 150,
+        render: (amount, record, index) => (
+          <InputNumber
+            style={{ width: '100%' }}
+            value={amount}
+            min={0}
+            precision={2}
+            formatter={value => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            parser={value => value.replace(/¥\s?|(,*)/g, '')}
+            onChange={(value) => handleAmountChange(index, 'deductionAmount', value)}
+          />
+        )
+      },
+      {
+        title: '实发金额',
+        dataIndex: 'netPay',
+        key: 'netPay',
+        width: 120,
+        render: (amount) => amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
+      }
+    ]
+
+    return [
+      ...fixedColumns,
+      ...dynamicIncomeColumns,
+      ...fixedDeductionColumns,
+      ...dynamicDeductionColumns,
+      ...otherColumns
+    ]
+  }
+
+  const detailColumns = buildDetailColumns()
 
   // 计算总计
   const calculateTotal = (field) => {
-    return employeeDetails.reduce((sum, detail) => sum + (parseFloat(detail[field]) || 0), 0)
+    return employeeDetails.reduce((sum, detail) => {
+      if (field === 'pensionInsurance') {
+        return sum + getInsuranceAmount(detail, 'pensionInsurance', 'S006')
+      } else if (field === 'medicalInsurance') {
+        return sum + getInsuranceAmount(detail, 'medicalInsurance', 'S007')
+      } else if (field === 'unemploymentInsurance') {
+        return sum + getInsuranceAmount(detail, 'unemploymentInsurance', 'S008')
+      } else if (field === 'housingFund') {
+        return sum + getInsuranceAmount(detail, 'housingFund', 'S009')
+      } else {
+        return sum + (parseFloat(detail[field]) || 0)
+      }
+    }, 0)
   }
 
   // 总计行数据
@@ -406,6 +613,31 @@ const SalaryIssuanceReview = () => {
         待复核的薪酬单
       </Title>
 
+      {/* 月份选择器 */}
+      <Card style={{ marginBottom: '16px' }}>
+        <Space>
+          <span style={{ fontWeight: 500 }}>选择月份：</span>
+          <DatePicker
+            picker="month"
+            value={selectedMonth}
+            onChange={(date) => {
+              setSelectedMonth(date || dayjs())
+            }}
+            format="YYYY-MM"
+            placeholder="选择月份"
+            allowClear={false}
+          />
+          <Button
+            type="primary"
+            onClick={() => {
+              setSelectedMonth(dayjs())
+            }}
+          >
+            当前月份
+          </Button>
+        </Space>
+      </Card>
+
       {/* 列表表格 */}
       <Card>
         <Table
@@ -417,10 +649,12 @@ const SalaryIssuanceReview = () => {
             current: pagination.current,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`
+            showSizeChanger: false,
+            showTotal: (total) => `共 ${total} 条`,
+            onChange: (page, pageSize) => {
+              handleTableChange({ current: page, pageSize: pageSize })
+            }
           }}
-          onChange={handleTableChange}
         />
       </Card>
     </div>

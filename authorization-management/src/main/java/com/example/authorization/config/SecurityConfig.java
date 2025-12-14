@@ -53,6 +53,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 登录、刷新Token、验证Token接口允许匿名访问
                 .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/validate").permitAll()
+                // 统计接口允许匿名访问（用于登录页面显示）
+                .requestMatchers("/api/statistics/**").permitAll()
                 // 登出接口需要认证（但允许通过过滤器）
                 .requestMatchers("/api/auth/logout").authenticated()
                 // 其他接口需要认证

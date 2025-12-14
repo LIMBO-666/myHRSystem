@@ -7,7 +7,9 @@ import com.example.storage.mapper.OrganizationMapper;
 import com.example.storage.service.OrganizationService;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 机构表 Service 实现类
@@ -47,6 +49,26 @@ public class OrganizationServiceImpl extends ServiceImpl<OrganizationMapper, Org
         LambdaQueryWrapper<Organization> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Organization::getOrgLevel, 3)
                .eq(Organization::getParentId, secondOrgId);
+        return list(wrapper);
+    }
+
+    @Override
+    public List<Organization> getThirdLevelOrgsByFirstOrgId(Long firstOrgId) {
+        // 1. 获取该一级机构下的所有二级机构
+        List<Organization> secondOrgs = getSecondLevelOrgs(firstOrgId);
+        if (secondOrgs.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 2. 获取所有二级机构的ID
+        List<Long> secondOrgIds = secondOrgs.stream()
+                .map(Organization::getOrgId)
+                .collect(Collectors.toList());
+
+        // 3. 查询这些二级机构下的所有三级机构
+        LambdaQueryWrapper<Organization> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Organization::getOrgLevel, 3)
+               .in(Organization::getParentId, secondOrgIds);
         return list(wrapper);
     }
 }

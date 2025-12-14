@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Table, Button, Modal, Form, Input, InputNumber, message, Space, Tag, Card, Row, Col, Divider, Typography } from 'antd'
 import { EyeOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { salaryStandardService } from '../../services/salaryStandardService'
+import { salaryItemService } from '../../services/salaryItemService'
 import dayjs from 'dayjs'
 
 const { TextArea } = Input
@@ -15,6 +16,7 @@ const SalaryStandardReview = () => {
   const [originalItems, setOriginalItems] = useState([]) // 保存原始明细，用于判断是否有修改
   const [editableItems, setEditableItems] = useState([]) // 可编辑的明细
   const [action, setAction] = useState(null) // 'review' 或 'view'
+  const [salaryItems, setSalaryItems] = useState([]) // 所有薪酬项目列表
   const [form] = Form.useForm()
   const [pagination, setPagination] = useState({
     current: 1,
@@ -22,15 +24,193 @@ const SalaryStandardReview = () => {
     total: 0
   })
 
-  // 判断是否为自动计算的项
-  const isAutoCalculated = (itemName) => {
-    const autoCalculatedItems = ['养老保险', '医疗保险', '失业保险', '住房公积金']
-    return autoCalculatedItems.includes(itemName)
+  // 判断项目是否有计算规则（需要自动计算）
+  const isAutoCalculated = (item) => {
+    if (typeof item === 'string') {
+      // 兼容旧代码：如果传入的是字符串（项目名称），返回false（不再使用硬编码）
+      return false
+    }
+    // 如果传入的是对象，检查calculationRule字段
+    return item && item.calculationRule && item.calculationRule.trim() !== ''
+  }
+
+  // 解析计算规则字符串，格式：项目代码+运算符+数字，例如：S001*8 或 基本工资*8% 或 基本工资*2%+3
+  const parseCalculationRule = (rule) => {
+    if (!rule || !rule.trim()) {
+      return null
+    }
+    
+    // 先尝试匹配复合运算：基本工资*2%+3
+    const compoundMatch = rule.match(/(.+?)([*/])(\d+(?:\.\d+)?)%([+\-])(\d+(?:\.\d+)?)/)
+    if (compoundMatch) {
+      const baseItemIdentifier = compoundMatch[1].trim()
+      const firstOperator = compoundMatch[2] // * 或 /
+      const firstValue = parseFloat(compoundMatch[3])
+      const secondOperator = compoundMatch[4] // + 或 -
+      const secondValue = parseFloat(compoundMatch[5])
+      
+      // 如果是项目名称，查找对应的项目代码
+      let baseItemCode = baseItemIdentifier
+      if (!baseItemIdentifier.startsWith('S')) {
+        const foundItem = salaryItems.find(item => item.itemName === baseItemIdentifier)
+        if (foundItem) {
+          baseItemCode = foundItem.itemCode
+        } else {
+          baseItemCode = baseItemIdentifier
+        }
+      }
+      
+      return {
+        baseItemCode,
+        operator: firstOperator,
+        value: firstValue,
+        secondOperator: secondOperator,
+        secondValue: secondValue,
+        isCompound: true,
+        originalIdentifier: baseItemIdentifier
+      }
+    }
+    
+    // 匹配简单运算：项目代码/名称+运算符+数字（可能带%）
+    const match = rule.match(/(.+?)([+\-*/])(\d+(?:\.\d+)?)(%?)/)
+    if (match) {
+      const baseItemIdentifier = match[1].trim()
+      const operator = match[2]
+      let value = parseFloat(match[3])
+      const hasPercent = match[4] === '%'
+      
+      // 如果是项目名称，查找对应的项目代码
+      let baseItemCode = baseItemIdentifier
+      if (!baseItemIdentifier.startsWith('S')) {
+        const foundItem = salaryItems.find(item => item.itemName === baseItemIdentifier)
+        if (foundItem) {
+          baseItemCode = foundItem.itemCode
+        } else {
+          baseItemCode = baseItemIdentifier
+        }
+      }
+      
+      return {
+        baseItemCode,
+        operator,
+        value,
+        isCompound: false,
+        originalIdentifier: baseItemIdentifier
+      }
+    }
+    
+    return null
+  }
+
+  // 根据计算规则计算金额（基于项目列表中的金额）
+  const calculateByRule = (item, itemsArray) => {
+    if (!isAutoCalculated(item)) {
+      return null
+    }
+    
+    const parsed = parseCalculationRule(item.calculationRule)
+    if (!parsed) {
+      return null
+    }
+    
+    // 查找基础项目
+    const baseItem = salaryItems.find(i => i.itemCode === parsed.baseItemCode)
+    if (!baseItem) {
+      return null
+    }
+    
+    // 从itemsArray中获取基础项目的金额
+    const baseItemData = itemsArray.find(i => i.itemId === baseItem.itemId)
+    const baseAmount = baseItemData?.amount || 0
+    if (!baseAmount || baseAmount <= 0) {
+      return 0
+    }
+    
+    const base = parseFloat(baseAmount)
+    let result = 0
+    
+    // 处理复合运算：基本工资*2%+3
+    if (parsed.isCompound) {
+      // 先计算第一部分：base * value / 100 或 base / value / 100
+      switch (parsed.operator) {
+        case '*':
+          result = base * (parsed.value / 100)
+          break
+        case '/':
+          result = base / (parsed.value / 100)
+          break
+        default:
+          return null
+      }
+      
+      // 然后计算第二部分：result + secondValue 或 result - secondValue
+      switch (parsed.secondOperator) {
+        case '+':
+          result = result + parsed.secondValue
+          break
+        case '-':
+          result = result - parsed.secondValue
+          break
+        default:
+          return null
+      }
+    } else {
+      // 处理简单运算
+      switch (parsed.operator) {
+        case '+':
+          result = base + parsed.value
+          break
+        case '-':
+          result = base - parsed.value
+          break
+        case '*':
+          // 乘除运算符，value是百分比
+          result = base * (parsed.value / 100)
+          break
+        case '/':
+          // 乘除运算符，value是百分比
+          result = base / (parsed.value / 100)
+          break
+        default:
+          return null
+      }
+    }
+    
+    return parseFloat(result.toFixed(2))
+  }
+
+  // 重新计算所有有计算规则的项目
+  const recalculateCalculatedItems = (items) => {
+    return items.map(item => {
+      if (isAutoCalculated(item)) {
+        const calculatedAmount = calculateByRule(item, items)
+        if (calculatedAmount !== null) {
+          return {
+            ...item,
+            amount: calculatedAmount,
+            isCalculated: true
+          }
+        }
+      }
+      return item
+    })
   }
 
   useEffect(() => {
     loadData()
+    loadSalaryItems()
   }, [pagination.current, pagination.pageSize])
+
+  const loadSalaryItems = async () => {
+    try {
+      const response = await salaryItemService.getList()
+      if (response.code === 200) {
+        setSalaryItems(response.data || [])
+      }
+    } catch (error) {
+      console.error('加载薪酬项目失败:', error)
+    }
+  }
 
   const loadData = async () => {
     setLoading(true)
@@ -56,18 +236,70 @@ const SalaryStandardReview = () => {
     }
   }
 
+  // 合并所有薪酬项目，确保显示所有项目（包括未填写的）
+  const mergeAllSalaryItems = (detail) => {
+    const allItemsMap = new Map()
+    
+    // 先添加所有薪酬项目
+    salaryItems.forEach(item => {
+      allItemsMap.set(item.itemId, {
+        itemId: item.itemId,
+        itemCode: item.itemCode,
+        itemName: item.itemName,
+        itemType: item.itemType,
+        calculationRule: item.calculationRule,
+        amount: null, // 默认没有金额
+        isCalculated: false
+      })
+    })
+    
+    // 然后用标准中的项目覆盖（如果有）
+    if (detail.items && detail.items.length > 0) {
+      detail.items.forEach(standardItem => {
+        if (allItemsMap.has(standardItem.itemId)) {
+          allItemsMap.set(standardItem.itemId, {
+            ...allItemsMap.get(standardItem.itemId),
+            amount: standardItem.amount,
+            isCalculated: standardItem.isCalculated || false
+          })
+        }
+      })
+    }
+    
+        // 转换为数组并按排序顺序排序
+        let mergedItems = Array.from(allItemsMap.values())
+          .sort((a, b) => {
+            const itemA = salaryItems.find(i => i.itemId === a.itemId)
+            const itemB = salaryItems.find(i => i.itemId === b.itemId)
+            const sortA = itemA ? (itemA.sortOrder || 0) : 0
+            const sortB = itemB ? (itemB.sortOrder || 0) : 0
+            return sortA - sortB
+          })
+        
+        // 重新计算有计算规则的项目
+        mergedItems = recalculateCalculatedItems(mergedItems)
+        
+        return mergedItems
+  }
+
   const handleReview = async (record) => {
     try {
       // 获取薪酬标准详情
       const detailResponse = await salaryStandardService.getDetail(record.standardId)
       if (detailResponse.code === 200) {
         const detail = detailResponse.data
-        setCurrentRecord(detail)
+        
+        // 合并所有薪酬项目
+        const mergedItems = mergeAllSalaryItems(detail)
+        
+        setCurrentRecord({
+          ...detail,
+          items: mergedItems
+        })
         setAction('review')
         // 保存原始明细和可编辑明细
-        const items = detail.items || []
-        setOriginalItems(JSON.parse(JSON.stringify(items))) // 深拷贝
-        setEditableItems(JSON.parse(JSON.stringify(items))) // 深拷贝
+        setOriginalItems(JSON.parse(JSON.stringify(mergedItems))) // 深拷贝
+        setEditableItems(JSON.parse(JSON.stringify(mergedItems))) // 深拷贝
         form.resetFields()
         form.setFieldsValue({
           reviewComments: detail.reviewComments || ''
@@ -88,7 +320,14 @@ const SalaryStandardReview = () => {
       const detailResponse = await salaryStandardService.getDetail(record.standardId)
       if (detailResponse.code === 200) {
         const detail = detailResponse.data
-        setCurrentRecord(detail)
+        
+        // 合并所有薪酬项目
+        const mergedItems = mergeAllSalaryItems(detail)
+        
+        setCurrentRecord({
+          ...detail,
+          items: mergedItems
+        })
         setAction('view')
         setEditableItems([])
         setOriginalItems([])
@@ -121,12 +360,26 @@ const SalaryStandardReview = () => {
       
       // 如果明细有修改，先更新明细
       if (hasItemsChanged()) {
+        // 重新计算所有有计算规则的项目，确保提交时数据准确
+        const finalItems = recalculateCalculatedItems(editableItems)
+        
         const updateData = {
-          items: editableItems.map(item => ({
-            itemId: item.itemId,
-            amount: item.amount || 0,
-            isCalculated: isAutoCalculated(item.itemName) // 自动计算的项设为true，其他为false
-          }))
+          items: finalItems.map(item => {
+            // 如果有计算规则，重新计算一次确保准确性
+            let amount = item.amount || 0
+            if (isAutoCalculated(item)) {
+              const calculatedAmount = calculateByRule(item, finalItems)
+              if (calculatedAmount !== null) {
+                amount = calculatedAmount
+              }
+            }
+            
+            return {
+              itemId: item.itemId,
+              amount: parseFloat(amount).toFixed(2),
+              isCalculated: isAutoCalculated(item)
+            }
+          })
         }
         const updateResponse = await salaryStandardService.update(
           currentRecord.standardId,
@@ -165,12 +418,26 @@ const SalaryStandardReview = () => {
       
       // 如果明细有修改，先更新明细
       if (hasItemsChanged()) {
+        // 重新计算所有有计算规则的项目，确保提交时数据准确
+        const finalItems = recalculateCalculatedItems(editableItems)
+        
         const updateData = {
-          items: editableItems.map(item => ({
-            itemId: item.itemId,
-            amount: item.amount || 0,
-            isCalculated: isAutoCalculated(item.itemName) // 自动计算的项设为true，其他为false
-          }))
+          items: finalItems.map(item => {
+            // 如果有计算规则，重新计算一次确保准确性
+            let amount = item.amount || 0
+            if (isAutoCalculated(item)) {
+              const calculatedAmount = calculateByRule(item, finalItems)
+              if (calculatedAmount !== null) {
+                amount = calculatedAmount
+              }
+            }
+            
+            return {
+              itemId: item.itemId,
+              amount: parseFloat(amount).toFixed(2),
+              isCalculated: isAutoCalculated(item)
+            }
+          })
         }
         const updateResponse = await salaryStandardService.update(
           currentRecord.standardId,
@@ -203,13 +470,14 @@ const SalaryStandardReview = () => {
     }
   }
 
-  const handleTableChange = (newPagination) => {
+  const handleTableChange = (newPagination, filters, sorter) => {
     setPagination(prev => ({
       ...prev,
       current: newPagination.current,
       pageSize: newPagination.pageSize
     }))
   }
+
 
   const columns = [
     {
@@ -304,10 +572,9 @@ const SalaryStandardReview = () => {
             current: pagination.current,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            showSizeChanger: true,
+            showSizeChanger: false,
             showTotal: (total) => `共 ${total} 条`,
-            onChange: handleTableChange,
-            onShowSizeChange: handleTableChange
+            onChange: handleTableChange
           }}
         />
       </Card>
@@ -430,7 +697,7 @@ const SalaryStandardReview = () => {
                       dataIndex: 'amount',
                       key: 'amount',
                       render: (amount, record, index) => {
-                        if (action === 'review' && !isAutoCalculated(record.itemName)) {
+                        if (action === 'review' && !isAutoCalculated(record)) {
                           // 复核模式下，非自动计算的项可编辑
                           return (
                             <InputNumber
@@ -443,7 +710,10 @@ const SalaryStandardReview = () => {
                               onChange={(value) => {
                                 const newItems = [...editableItems]
                                 newItems[index].amount = value || 0
-                                setEditableItems(newItems)
+                                
+                                // 重新计算所有有计算规则的项目
+                                const recalculatedItems = recalculateCalculatedItems(newItems)
+                                setEditableItems(recalculatedItems)
                               }}
                             />
                           )

@@ -12,17 +12,39 @@ export const organizationService = {
   },
 
   /**
-   * 获取二级机构列表
+   * 获取二级机构列表（可选parentId）
    */
   getLevel2List: async (parentId) => {
-    return await apiClient.get(`/organizations/level2?parentId=${parentId}`)
+    if (parentId) {
+      return await apiClient.get(`/organizations/level2?parentId=${parentId}`)
+    } else {
+      return await apiClient.get('/organizations/level2/all')
+    }
   },
 
   /**
-   * 获取三级机构列表
+   * 获取三级机构列表（可选parentId）
+   * @param {Number|String} parentId - 父机构ID（二级机构ID）
+   * @param {Number|String} firstOrgId - 一级机构ID（可选，用于获取一级机构下的所有三级机构）
    */
-  getLevel3List: async (parentId) => {
-    return await apiClient.get(`/organizations/level3?parentId=${parentId}`)
+  getLevel3List: async (parentId, firstOrgId) => {
+    if (firstOrgId) {
+      // 如果提供了一级机构ID，获取该一级机构下的所有三级机构
+      return await apiClient.get(`/organizations/level3/by-first?firstOrgId=${firstOrgId}`)
+    } else if (parentId) {
+      // 如果提供了二级机构ID，获取该二级机构下的三级机构
+      return await apiClient.get(`/organizations/level3?parentId=${parentId}`)
+    } else {
+      // 否则获取所有三级机构
+      return await apiClient.get('/organizations/level3/all')
+    }
+  },
+
+  /**
+   * 根据机构ID获取机构详情
+   */
+  getById: async (orgId) => {
+    return await apiClient.get(`/organizations/${orgId}`)
   },
 
   /**

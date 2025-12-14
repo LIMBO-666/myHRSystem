@@ -6,9 +6,36 @@ import apiClient from './api'
 export const positionService = {
   /**
    * 获取职位列表
+   * @param {Object} params - 查询参数 {firstOrgId, secondOrgId, thirdOrgId}
    */
-  getList: async (thirdOrgId) => {
-    const url = thirdOrgId ? `/positions?thirdOrgId=${thirdOrgId}` : '/positions'
+  getList: async (params) => {
+    let url = '/positions?'
+    const queryParams = []
+    
+    if (typeof params === 'number' || typeof params === 'string') {
+      // 兼容旧版本：只传thirdOrgId
+      if (params) {
+        queryParams.push(`thirdOrgId=${params}`)
+      }
+    } else if (params && typeof params === 'object') {
+      // 新版本：传对象参数
+      if (params.firstOrgId) {
+        queryParams.push(`firstOrgId=${params.firstOrgId}`)
+      }
+      if (params.secondOrgId) {
+        queryParams.push(`secondOrgId=${params.secondOrgId}`)
+      }
+      if (params.thirdOrgId) {
+        queryParams.push(`thirdOrgId=${params.thirdOrgId}`)
+      }
+    }
+    
+    if (queryParams.length > 0) {
+      url += queryParams.join('&')
+    } else {
+      url = '/positions'
+    }
+    
     return await apiClient.get(url)
   },
 

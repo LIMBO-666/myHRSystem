@@ -24,5 +24,21 @@ public interface PositionService extends IService<Position> {
      * @return 职位信息
      */
     Position getByPositionName(String positionName);
+
+    /**
+     * 根据一级机构ID查询职位列表（查询该一级机构下所有三级机构的职位）
+     *
+     * @param firstOrgId 一级机构ID
+     * @return 职位列表
+     */
+    List<Position> getByFirstOrgId(Long firstOrgId);
+
+    /**
+     * 根据二级机构ID查询职位列表（查询该二级机构下所有三级机构的职位）
+     *
+     * @param secondOrgId 二级机构ID
+     * @return 职位列表
+     */
+    List<Position> getBySecondOrgId(Long secondOrgId);
 }
 

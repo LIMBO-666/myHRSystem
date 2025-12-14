@@ -1,45 +1,1008 @@
 .login-container {
   display: flex;
-  align-items: center;
-  justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #000000;
+  position: relative;
+  overflow: hidden;
 }
 
-.login-box {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 50px 40px;
-  width: 90%;
-  max-width: 420px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+/* 动画背景容器 */
+.animated-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  z-index: 0;
 }
 
-.login-title {
-  text-align: center;
-  font-size: 32px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* 移动的渐变圆形 */
+.bg-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.3;
+  animation: moveCircle 20s infinite ease-in-out;
+}
+
+.circle-1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.6) 0%, rgba(138, 43, 226, 0) 70%);
+  top: -100px;
+  left: -100px;
+  animation-delay: 0s;
+}
+
+.circle-2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.5) 0%, rgba(59, 130, 246, 0) 70%);
+  bottom: -150px;
+  right: -150px;
+  animation-delay: 5s;
+}
+
+.circle-3 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(147, 51, 234, 0.4) 0%, rgba(147, 51, 234, 0) 70%);
+  top: 50%;
+  left: 10%;
+  animation-delay: 10s;
+}
+
+.circle-4 {
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.4) 0%, rgba(37, 99, 235, 0) 70%);
+  top: 20%;
+  right: 20%;
+  animation-delay: 15s;
+}
+
+@keyframes moveCircle {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(50px, -30px) scale(1.1);
+  }
+  50% {
+    transform: translate(-30px, 50px) scale(0.9);
+  }
+  75% {
+    transform: translate(30px, -20px) scale(1.05);
+  }
+}
+
+/* 流动的线条 */
+.flowing-line {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+  animation: flowLine 15s infinite linear;
+}
+
+.line-1 {
+  width: 300px;
+  top: 20%;
+  left: -300px;
+  animation-delay: 0s;
+  transform: rotate(45deg);
+}
+
+.line-2 {
+  width: 400px;
+  top: 60%;
+  right: -400px;
+  animation-delay: 5s;
+  transform: rotate(-30deg);
+}
+
+.line-3 {
+  width: 350px;
+  top: 80%;
+  left: -350px;
+  animation-delay: 10s;
+  transform: rotate(60deg);
+}
+
+@keyframes flowLine {
+  0% {
+    transform: translateX(0) rotate(var(--rotation, 0deg));
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(calc(100vw + 500px)) rotate(var(--rotation, 0deg));
+    opacity: 0;
+  }
+}
+
+/* 粒子效果 */
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  animation: particleFloat 20s infinite ease-in-out;
+}
+
+.particle-1 { left: 10%; top: 20%; animation-delay: 0s; }
+.particle-2 { left: 20%; top: 40%; animation-delay: 1s; }
+.particle-3 { left: 30%; top: 60%; animation-delay: 2s; }
+.particle-4 { left: 40%; top: 30%; animation-delay: 3s; }
+.particle-5 { left: 50%; top: 70%; animation-delay: 4s; }
+.particle-6 { left: 60%; top: 15%; animation-delay: 5s; }
+.particle-7 { left: 70%; top: 50%; animation-delay: 6s; }
+.particle-8 { left: 80%; top: 25%; animation-delay: 7s; }
+.particle-9 { left: 15%; top: 80%; animation-delay: 8s; }
+.particle-10 { left: 25%; top: 10%; animation-delay: 9s; }
+.particle-11 { left: 35%; top: 90%; animation-delay: 10s; }
+.particle-12 { left: 45%; top: 55%; animation-delay: 11s; }
+.particle-13 { left: 55%; top: 35%; animation-delay: 12s; }
+.particle-14 { left: 65%; top: 75%; animation-delay: 13s; }
+.particle-15 { left: 75%; top: 45%; animation-delay: 14s; }
+.particle-16 { left: 85%; top: 65%; animation-delay: 15s; }
+.particle-17 { left: 90%; top: 85%; animation-delay: 16s; }
+.particle-18 { left: 5%; top: 50%; animation-delay: 17s; }
+.particle-19 { left: 95%; top: 30%; animation-delay: 18s; }
+.particle-20 { left: 12%; top: 95%; animation-delay: 19s; }
+
+@keyframes particleFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translate(20px, -30px) scale(1.2);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-15px, 20px) scale(0.8);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translate(25px, 10px) scale(1.1);
+    opacity: 0.7;
+  }
+}
+
+/* 闪烁的星星 */
+.star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: twinkle 3s infinite ease-in-out;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+}
+
+.star-1 { left: 8%; top: 15%; animation-delay: 0s; }
+.star-2 { left: 15%; top: 35%; animation-delay: 0.2s; }
+.star-3 { left: 22%; top: 55%; animation-delay: 0.4s; }
+.star-4 { left: 28%; top: 25%; animation-delay: 0.6s; }
+.star-5 { left: 35%; top: 75%; animation-delay: 0.8s; }
+.star-6 { left: 42%; top: 45%; animation-delay: 1s; }
+.star-7 { left: 48%; top: 65%; animation-delay: 1.2s; }
+.star-8 { left: 55%; top: 20%; animation-delay: 1.4s; }
+.star-9 { left: 62%; top: 85%; animation-delay: 1.6s; }
+.star-10 { left: 68%; top: 40%; animation-delay: 1.8s; }
+.star-11 { left: 75%; top: 60%; animation-delay: 2s; }
+.star-12 { left: 82%; top: 30%; animation-delay: 2.2s; }
+.star-13 { left: 88%; top: 70%; animation-delay: 2.4s; }
+.star-14 { left: 92%; top: 50%; animation-delay: 2.6s; }
+.star-15 { left: 5%; top: 90%; animation-delay: 2.8s; }
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+/* 浮动图标 */
+.floating-icons {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.floating-icon {
+  position: absolute;
+  font-size: 48px;
+  opacity: 0.1;
+  animation: float 15s infinite ease-in-out;
+}
+
+.icon-1 {
+  top: 10%;
+  left: 15%;
+  animation-delay: 0s;
+}
+
+.icon-2 {
+  top: 30%;
+  left: 8%;
+  animation-delay: 2s;
+  font-size: 40px;
+}
+
+.icon-3 {
+  top: 50%;
+  left: 12%;
+  animation-delay: 4s;
+  font-size: 44px;
+}
+
+.icon-4 {
+  top: 70%;
+  left: 10%;
+  animation-delay: 1s;
+  font-size: 36px;
+}
+
+.icon-5 {
+  top: 20%;
+  right: 15%;
+  animation-delay: 3s;
+  font-size: 42px;
+}
+
+.icon-6 {
+  top: 60%;
+  right: 12%;
+  animation-delay: 5s;
+  font-size: 38px;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-40px) rotate(-5deg);
+  }
+  75% {
+    transform: translateY(-20px) rotate(3deg);
+  }
+}
+
+/* 左侧欢迎区域 */
+.login-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 60px;
+  position: relative;
+  z-index: 1;
+}
+
+/* 艺术字标题 */
+.artistic-title {
+  margin-bottom: 40px;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.artistic-text-main {
+  font-size: 64px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #3b82f6 0%, #8a2be2 50%, #ec4899 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 10px;
+  line-height: 1.1;
+  margin-bottom: 8px;
+  text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+  letter-spacing: 3px;
+  position: relative;
+  animation: textGlow 3s ease-in-out infinite;
+}
+
+.artistic-text-main::before {
+  content: 'Human Resource';
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: linear-gradient(135deg, #3b82f6 0%, #8a2be2 50%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: blur(8px);
+  opacity: 0.5;
+  z-index: -1;
+  animation: textGlowShadow 3s ease-in-out infinite;
+}
+
+.artistic-text-sub {
+  font-size: 48px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  letter-spacing: 2px;
+  opacity: 0.9;
+}
+
+.artistic-text-en {
+  font-size: 24px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  margin-top: 8px;
+  position: relative;
+  padding-left: 4px;
+}
+
+.artistic-text-en::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 30px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.8), transparent);
+  transform: translateY(-50%);
+}
+
+.artistic-text-en::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 30px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.8));
+  transform: translateY(-50%);
+}
+
+@keyframes textGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.8)) drop-shadow(0 0 30px rgba(236, 72, 153, 0.6));
+  }
+}
+
+@keyframes textGlowShadow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translate(0, 0);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate(2px, 2px);
+  }
+}
+
+.welcome-text {
+  color: #ffffff;
+  font-size: 64px;
+  font-weight: 700;
+  margin: 0 0 60px 0;
+  text-align: left;
+  line-height: 1.2;
+  animation: fadeInUp 1s ease-out 0.2s both;
+}
+
+/* HR统计信息 */
+.hr-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 400px;
+  animation: fadeInUp 1.2s ease-out;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateX(10px);
+}
+
+.stat-icon {
+  font-size: 36px;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(138, 43, 226, 0.2) 100%);
+  border-radius: 12px;
+  animation: pulse 2s infinite;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  color: #ffffff;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, #3b82f6 0%, #8a2be2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* 右侧登录卡片 */
+.login-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 40px;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(138, 43, 226, 0.2) 100%);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: -1;
+}
+
+.login-card::after {
+  content: '';
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+  top: -50%;
+  right: -50%;
+  animation: rotateGradient 20s linear infinite;
+  z-index: -1;
+  pointer-events: none;
+}
+
+@keyframes rotateGradient {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 卡片装饰元素 */
+.card-decorations {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+  filter: blur(30px);
+  animation: decorationFloat 8s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.circle-dec-1 {
+  width: 120px;
+  height: 120px;
+  top: 10%;
+  right: 15%;
+  animation-delay: 0s;
+}
+
+.circle-dec-2 {
+  width: 80px;
+  height: 80px;
+  bottom: 20%;
+  left: 10%;
+  animation-delay: 2s;
+}
+
+.circle-dec-3 {
+  width: 100px;
+  height: 100px;
+  top: 50%;
+  right: 5%;
+  animation-delay: 4s;
+}
+
+.decoration-line {
+  position: absolute;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+  animation: decorationLineMove 6s infinite ease-in-out;
+}
+
+.line-dec-1 {
+  width: 150px;
+  top: 25%;
+  right: 10%;
+  transform: rotate(45deg);
+  animation-delay: 0s;
+}
+
+.line-dec-2 {
+  width: 120px;
+  bottom: 30%;
+  left: 15%;
+  transform: rotate(-30deg);
+  animation-delay: 3s;
+}
+
+.decoration-icon {
+  position: absolute;
+  font-size: 32px;
+  opacity: 0.15;
+  animation: decorationIconFloat 10s infinite ease-in-out;
+}
+
+.icon-dec-1 {
+  top: 15%;
+  right: 20%;
+  animation-delay: 0s;
+}
+
+.icon-dec-2 {
+  bottom: 25%;
+  left: 12%;
+  animation-delay: 2.5s;
+}
+
+.icon-dec-3 {
+  top: 60%;
+  right: 8%;
+  animation-delay: 5s;
+}
+
+.icon-dec-4 {
+  bottom: 15%;
+  right: 25%;
+  animation-delay: 7.5s;
+}
+
+@keyframes decorationFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(20px, -30px) scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+@keyframes decorationLineMove {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translateX(0) rotate(var(--rotation, 0deg));
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateX(30px) rotate(var(--rotation, 0deg));
+  }
+}
+
+@keyframes decorationIconFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.15;
+  }
+  25% {
+    transform: translateY(-15px) rotate(5deg);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translateY(-25px) rotate(-5deg);
+    opacity: 0.2;
+  }
+  75% {
+    transform: translateY(-10px) rotate(3deg);
+    opacity: 0.25;
+  }
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 40px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  z-index: 2;
+}
+
+.header-icon {
+  font-size: 56px;
+  margin-bottom: 20px;
+  display: inline-block;
+  animation: headerIconPulse 2s infinite ease-in-out;
+  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
+  transform: rotate(-5deg);
+}
+
+@keyframes headerIconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.login-title {
+  color: #ffffff;
+  font-size: 36px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  background: linear-gradient(135deg, #ffffff 0%, rgba(59, 130, 246, 0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+}
+
+.login-title::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.8), transparent);
+  border-radius: 2px;
+  animation: titleUnderline 2s infinite ease-in-out;
+}
+
+@keyframes titleUnderline {
+  0%, 100% {
+    width: 60px;
+    opacity: 0.6;
+  }
+  50% {
+    width: 100px;
+    opacity: 1;
+  }
 }
 
 .login-subtitle {
-  text-align: center;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  margin: 0;
+  animation: fadeInUp 1s ease-out 0.3s both;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  z-index: 2;
+}
+
+.login-input {
+  height: 50px;
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 16px;
+  padding: 0 16px;
+  margin-bottom: 20px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+/* 确保 Ant Design Input 组件内部样式正确 */
+.login-input .ant-input,
+.login-input input {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-size: 16px;
+}
+
+.login-input .ant-input::placeholder,
+.login-input input::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 确保 Ant Design Input 组件本身也有正确的背景 */
+.login-input.ant-input {
+  background: rgba(30, 41, 59, 0.6) !important;
+}
+
+/* 覆盖 Ant Design 的默认样式 - 确保所有可能的组合都有正确的背景 */
+.ant-input-wrapper .login-input.ant-input,
+.ant-input-wrapper .login-input {
+  background: rgba(30, 41, 59, 0.6) !important;
+}
+
+/* 确保密码输入框和普通输入框使用相同的背景 */
+.password-input.ant-input-password,
+.password-input .ant-input-password-input {
+  background: rgba(30, 41, 59, 0.6) !important;
+}
+
+.password-input .ant-input-password-input input {
+  background: rgba(30, 41, 59, 0.6) !important;
+  color: #ffffff !important;
+}
+
+.login-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.login-input:hover,
+.login-input:hover .ant-input {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(30, 41, 59, 0.8) !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.login-input:focus,
+.login-input:focus .ant-input,
+.login-input.ant-input-focused {
+  border-color: rgba(59, 130, 246, 0.8);
+  background: rgba(30, 41, 59, 0.9) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), 0 0 20px rgba(59, 130, 246, 0.15);
+}
+
+.login-input.ant-input-focused .ant-input {
+  background: rgba(30, 41, 59, 0.9) !important;
+}
+
+/* 处理浏览器自动填充样式 */
+.login-input input:-webkit-autofill,
+.login-input input:-webkit-autofill:hover,
+.login-input input:-webkit-autofill:focus,
+.login-input input:-webkit-autofill:active,
+.login-input .ant-input:-webkit-autofill,
+.login-input .ant-input:-webkit-autofill:hover,
+.login-input .ant-input:-webkit-autofill:focus,
+.login-input .ant-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px rgba(30, 41, 59, 0.6) inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background-color: rgba(30, 41, 59, 0.6) !important;
+  transition: background-color 5000s ease-in-out 0s;
+  color: #ffffff !important;
+}
+
+.login-input:hover input:-webkit-autofill,
+.login-input:hover .ant-input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px rgba(30, 41, 59, 0.8) inset !important;
+  background-color: rgba(30, 41, 59, 0.8) !important;
+}
+
+.login-input:focus-within input:-webkit-autofill,
+.login-input:focus-within .ant-input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px rgba(30, 41, 59, 0.9) inset !important;
+  background-color: rgba(30, 41, 59, 0.9) !important;
+}
+
+.password-input .ant-input-password-icon {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.password-input .ant-input-password-icon:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* 处理密码输入框的自动填充样式 */
+.password-input input:-webkit-autofill,
+.password-input input:-webkit-autofill:hover,
+.password-input input:-webkit-autofill:focus,
+.password-input input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px rgba(30, 41, 59, 0.6) inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background-color: rgba(30, 41, 59, 0.6) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.password-input:hover input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px rgba(30, 41, 59, 0.8) inset !important;
+  background-color: rgba(30, 41, 59, 0.8) !important;
+}
+
+.password-input:focus-within input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px rgba(30, 41, 59, 0.9) inset !important;
+  background-color: rgba(30, 41, 59, 0.9) !important;
+}
+
+.password-icon {
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.login-button {
+  height: 50px;
+  background: linear-gradient(135deg, #3b82f6 0%, #8a2be2 100%);
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.login-button:hover::before {
+  left: 100%;
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.button-arrow {
+  transition: transform 0.3s ease;
+  font-size: 20px;
+}
+
+.login-button:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5), 0 0 30px rgba(138, 43, 226, 0.3);
+}
+
+.login-button:hover .button-arrow {
+  transform: translateX(5px);
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+.login-button:focus {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+}
+
+
+/* Ant Design 表单样式覆盖 */
+.login-form .ant-form-item {
+  margin-bottom: 20px;
+}
+
+.login-form .ant-form-item-explain-error {
+  color: rgba(255, 77, 79, 0.9);
   font-size: 14px;
-  margin-bottom: 40px;
 }
 
-.login-footer {
-  text-align: center;
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #e8e8e8;
-  color: #6c757d;
-  font-size: 12px;
-}
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+  }
 
+  .login-left {
+    padding: 40px 20px 20px 20px;
+  }
+
+  .artistic-text-main {
+    font-size: 40px;
+    letter-spacing: 2px;
+  }
+
+  .artistic-text-sub {
+    font-size: 32px;
+    letter-spacing: 1px;
+  }
+
+  .artistic-text-en {
+    font-size: 18px;
+    letter-spacing: 4px;
+  }
+
+  .welcome-text {
+    font-size: 48px;
+    text-align: center;
+  }
+
+  .login-card {
+    padding: 40px 20px;
+  }
+
+  .login-card::before {
+    border-radius: 24px 24px 0 0;
+  }
+}

@@ -50,8 +50,14 @@ public class OrganizationController {
      */
     @GetMapping("/level2")
     @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
-    public ApiResponse<List<OrganizationResponse>> getSecondLevelOrgs(@RequestParam("parentId") Long parentId) {
-        List<Organization> orgs = organizationService.getSecondLevelOrgs(parentId);
+    public ApiResponse<List<OrganizationResponse>> getSecondLevelOrgs(@RequestParam(value = "parentId", required = false) Long parentId) {
+        List<Organization> orgs;
+        if (parentId != null) {
+            orgs = organizationService.getSecondLevelOrgs(parentId);
+        } else {
+            // 如果没有提供parentId，返回所有二级机构
+            orgs = organizationService.getByOrgLevel(2);
+        }
         // 只返回激活状态的机构
         List<OrganizationResponse> responses = orgs.stream()
                 .filter(org -> OrgStatus.ACTIVE.getCode().equals(org.getStatus()))
@@ -66,14 +72,85 @@ public class OrganizationController {
      */
     @GetMapping("/level3")
     @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
-    public ApiResponse<List<OrganizationResponse>> getThirdLevelOrgs(@RequestParam("parentId") Long parentId) {
-        List<Organization> orgs = organizationService.getThirdLevelOrgs(parentId);
+    public ApiResponse<List<OrganizationResponse>> getThirdLevelOrgs(@RequestParam(value = "parentId", required = false) Long parentId) {
+        List<Organization> orgs;
+        if (parentId != null) {
+            orgs = organizationService.getThirdLevelOrgs(parentId);
+        } else {
+            // 如果没有提供parentId，返回所有三级机构
+            orgs = organizationService.getByOrgLevel(3);
+        }
         // 只返回激活状态的机构
         List<OrganizationResponse> responses = orgs.stream()
                 .filter(org -> OrgStatus.ACTIVE.getCode().equals(org.getStatus()))
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
         return ApiResponse.success("查询成功", responses);
+    }
+
+    /**
+     * 获取所有二级机构列表（不依赖父机构）
+     * 人事专员和人事经理都可以访问（用于档案登记）
+     */
+    @GetMapping("/level2/all")
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    public ApiResponse<List<OrganizationResponse>> getAllSecondLevelOrgs() {
+        List<Organization> orgs = organizationService.getByOrgLevel(2);
+        // 只返回激活状态的机构
+        List<OrganizationResponse> responses = orgs.stream()
+                .filter(org -> OrgStatus.ACTIVE.getCode().equals(org.getStatus()))
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        return ApiResponse.success("查询成功", responses);
+    }
+
+    /**
+     * 获取所有三级机构列表（不依赖父机构）
+     * 人事专员和人事经理都可以访问（用于档案登记）
+     */
+    @GetMapping("/level3/all")
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    public ApiResponse<List<OrganizationResponse>> getAllThirdLevelOrgs() {
+        List<Organization> orgs = organizationService.getByOrgLevel(3);
+        // 只返回激活状态的机构
+        List<OrganizationResponse> responses = orgs.stream()
+                .filter(org -> OrgStatus.ACTIVE.getCode().equals(org.getStatus()))
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        return ApiResponse.success("查询成功", responses);
+    }
+
+    /**
+     * 根据一级机构ID获取该一级机构下的所有三级机构列表
+     * 人事专员和人事经理都可以访问（用于档案登记）
+     */
+    @GetMapping("/level3/by-first")
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    public ApiResponse<List<OrganizationResponse>> getThirdLevelOrgsByFirstOrgId(@RequestParam("firstOrgId") Long firstOrgId) {
+        List<Organization> orgs = organizationService.getThirdLevelOrgsByFirstOrgId(firstOrgId);
+        // 只返回激活状态的机构
+        List<OrganizationResponse> responses = orgs.stream()
+                .filter(org -> OrgStatus.ACTIVE.getCode().equals(org.getStatus()))
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        return ApiResponse.success("查询成功", responses);
+    }
+
+    /**
+     * 根据机构ID获取机构详情（包括父机构信息）
+     * 人事专员和人事经理都可以访问（用于档案登记）
+     */
+    @GetMapping("/{orgId}")
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    public ApiResponse<OrganizationResponse> getOrgById(@PathVariable("orgId") Long orgId) {
+        Organization org = organizationService.getById(orgId);
+        if (org == null) {
+            return ApiResponse.error(404, "机构不存在");
+        }
+        if (!OrgStatus.ACTIVE.getCode().equals(org.getStatus())) {
+            return ApiResponse.error(404, "机构已禁用");
+        }
+        return ApiResponse.success("查询成功", convertToResponse(org));
     }
 
     /**
@@ -208,6 +285,23 @@ public class OrganizationController {
             e.printStackTrace();
             return ApiResponse.error(500, "创建失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 根据机构ID获取机构详情（包括父机构信息）
+     * 注意：这个方法会被上面的getOrgById覆盖，需要调整路径
+     */
+    @GetMapping("/detail/{orgId}")
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    public ApiResponse<OrganizationResponse> getOrgDetailById(@PathVariable("orgId") Long orgId) {
+        Organization org = organizationService.getById(orgId);
+        if (org == null) {
+            return ApiResponse.error(404, "机构不存在");
+        }
+        if (!OrgStatus.ACTIVE.getCode().equals(org.getStatus())) {
+            return ApiResponse.error(404, "机构已禁用");
+        }
+        return ApiResponse.success("查询成功", convertToResponse(org));
     }
 
     /**

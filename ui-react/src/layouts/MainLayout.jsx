@@ -34,8 +34,7 @@ const MainLayout = () => {
           { key: '/org-level1', label: '一级机构管理' },
           { key: '/org-level2', label: '二级机构管理' },
           { key: '/org-level3', label: '三级机构管理' },
-          { key: '/position', label: '职位管理' },
-          { key: '/salary-item', label: '薪酬项目管理' }
+          { key: '/position', label: '职位管理' }
         ]
       }
       items.push(systemMenu)
@@ -86,6 +85,10 @@ const MainLayout = () => {
     // 标准查询：薪酬专员和经理都可以访问
     if (hasRole(['SALARY_SPECIALIST', 'SALARY_MANAGER'])) {
       salaryStandardMenu.children.push({ key: '/salary-standard-query', label: '标准查询' })
+    }
+    // 薪酬项目管理：只有薪酬经理可以访问
+    if (hasRole(['SALARY_MANAGER'])) {
+      salaryStandardMenu.children.push({ key: '/salary-item', label: '薪酬项目管理' })
     }
 
     if (salaryStandardMenu.children.length > 0) {

@@ -72,9 +72,11 @@ public class SalaryStandardController {
     @GetMapping("/pending-review")
     @RequireRole({"SALARY_MANAGER"})
     public ApiResponse<PageResponse<SalaryStandardResponse>> getPendingReviewStandards(
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
-        IPage<SalaryStandard> pageResult = salaryStandardService.getPendingReviewPage(page, size);
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size) {
+        int pageNum = (page != null && page > 0) ? page : 1;
+        int pageSize = (size != null && size > 0) ? size : 10;
+        IPage<SalaryStandard> pageResult = salaryStandardService.getPendingReviewPage(pageNum, pageSize);
 
         List<SalaryStandardResponse> responses = pageResult.getRecords().stream()
                 .map(this::convertToResponse)
@@ -164,13 +166,16 @@ public class SalaryStandardController {
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "positionId", required = false) Long positionId,
             @RequestParam(value = "jobTitle", required = false) String jobTitle,
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size) {
         LocalDate start = startDate != null ? LocalDate.parse(startDate) : null;
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : null;
 
+        int pageNum = (page != null && page > 0) ? page : 1;
+        int pageSize = (size != null && size > 0) ? size : 10;
+
         IPage<SalaryStandard> pageResult = salaryStandardService.querySalaryStandards(
-                standardCode, keyword, start, end, status, positionId, jobTitle, page, size);
+                standardCode, keyword, start, end, status, positionId, jobTitle, pageNum, pageSize);
 
         List<SalaryStandardResponse> responses = pageResult.getRecords().stream()
                 .map(this::convertToResponse)
@@ -180,6 +185,9 @@ public class SalaryStandardController {
                 .total(pageResult.getTotal())
                 .list(responses)
                 .build();
+
+        // 调试日志
+        System.out.println("查询薪酬标准 - 页码: " + pageNum + ", 每页: " + pageSize + ", 总数: " + pageResult.getTotal() + ", 当前页记录数: " + responses.size());
 
         return ApiResponse.success("查询成功", pageResponse);
     }

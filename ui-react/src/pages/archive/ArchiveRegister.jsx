@@ -35,6 +35,9 @@ const ArchiveRegister = () => {
 
   useEffect(() => {
     loadLevel1Orgs()
+    loadAllLevel2Orgs()
+    loadAllLevel3Orgs()
+    loadAllPositions()
   }, [])
 
   const loadLevel1Orgs = async () => {
@@ -48,6 +51,34 @@ const ArchiveRegister = () => {
     } catch (error) {
       console.error('加载一级机构失败:', error)
       message.error('加载一级机构失败：' + (error.message || '未知错误'))
+    }
+  }
+
+  const loadAllLevel2Orgs = async () => {
+    try {
+      const response = await organizationService.getLevel2List(null)
+      if (response.code === 200) {
+        setLevel2Orgs(response.data || [])
+      } else {
+        message.error(response.message || '加载二级机构失败')
+      }
+    } catch (error) {
+      console.error('加载二级机构失败:', error)
+      message.error('加载二级机构失败：' + (error.message || '未知错误'))
+    }
+  }
+
+  const loadAllLevel3Orgs = async () => {
+    try {
+      const response = await organizationService.getLevel3List(null)
+      if (response.code === 200) {
+        setLevel3Orgs(response.data || [])
+      } else {
+        message.error(response.message || '加载三级机构失败')
+      }
+    } catch (error) {
+      console.error('加载三级机构失败:', error)
+      message.error('加载三级机构失败：' + (error.message || '未知错误'))
     }
   }
 
@@ -79,9 +110,23 @@ const ArchiveRegister = () => {
     }
   }
 
-  const loadPositions = async (thirdOrgId) => {
+  const loadLevel3OrgsByFirstOrg = async (firstOrgId) => {
     try {
-      const response = await positionService.getList(thirdOrgId)
+      const response = await organizationService.getLevel3List(null, firstOrgId)
+      if (response.code === 200) {
+        setLevel3Orgs(response.data || [])
+      } else {
+        message.error(response.message || '加载三级机构失败')
+      }
+    } catch (error) {
+      console.error('加载三级机构失败:', error)
+      message.error('加载三级机构失败：' + (error.message || '未知错误'))
+    }
+  }
+
+  const loadPositions = async (params) => {
+    try {
+      const response = await positionService.getList(params)
       if (response.code === 200) {
         setPositions(response.data || [])
       } else {
@@ -93,25 +138,121 @@ const ArchiveRegister = () => {
     }
   }
 
-  const handleLevel1Change = (value) => {
+  const loadAllPositions = async () => {
+    try {
+      const response = await positionService.getList({})
+      if (response.code === 200) {
+        setPositions(response.data || [])
+      } else {
+        message.error(response.message || '加载职位失败')
+      }
+    } catch (error) {
+      console.error('加载职位失败:', error)
+      message.error('加载职位失败：' + (error.message || '未知错误'))
+    }
+  }
+
+  const handleLevel1Change = async (value) => {
+    if (value) {
+      // 加载该一级机构下的二级机构
+      await loadLevel2Orgs(value)
+      // 加载该一级机构下的所有三级机构（允许跳过二级机构直接选择三级机构）
+      await loadLevel3OrgsByFirstOrg(value)
+      // 加载该一级机构下的所有职位
+      await loadPositions({ firstOrgId: value })
+    } else {
+      await loadAllLevel2Orgs()
+      await loadAllLevel3Orgs()
+      await loadAllPositions()
+    }
     form.setFieldsValue({ secondOrgId: undefined, thirdOrgId: undefined, positionId: undefined, salaryStandardId: undefined })
-    setLevel2Orgs([])
-    setLevel3Orgs([])
-    setPositions([])
-    loadLevel2Orgs(value)
   }
 
-  const handleLevel2Change = (value) => {
+  const handleLevel2Change = async (value) => {
+    if (value) {
+      // 获取二级机构详情，自动填充一级机构
+      try {
+        const response = await organizationService.getById(value)
+        if (response.code === 200 && response.data) {
+          const org = response.data
+          if (org.parentId) {
+            form.setFieldsValue({ firstOrgId: org.parentId })
+          }
+        }
+      } catch (error) {
+        console.error('获取二级机构详情失败:', error)
+      }
+      // 加载该二级机构下的三级机构
+      await loadLevel3Orgs(value)
+      // 加载该二级机构下的所有职位
+      await loadPositions({ secondOrgId: value })
+    } else {
+      await loadAllLevel3Orgs()
+      // 如果一级机构已选择，加载一级机构下的职位；否则加载所有职位
+      const firstOrgId = form.getFieldValue('firstOrgId')
+      if (firstOrgId) {
+        await loadPositions({ firstOrgId })
+      } else {
+        await loadAllPositions()
+      }
+    }
     form.setFieldsValue({ thirdOrgId: undefined, positionId: undefined, salaryStandardId: undefined })
-    setLevel3Orgs([])
-    setPositions([])
-    loadLevel3Orgs(value)
   }
 
-  const handleLevel3Change = (value) => {
+  // 填充三级机构的上级机构信息（不清空职位）
+  const fillParentOrgsForThirdOrg = async (thirdOrgId) => {
+    if (!thirdOrgId) return
+    
+    try {
+      const response = await organizationService.getById(thirdOrgId)
+      if (response.code === 200 && response.data) {
+        const org = response.data
+        if (org.parentId) {
+          const currentSecondOrgId = form.getFieldValue('secondOrgId')
+          const currentFirstOrgId = form.getFieldValue('firstOrgId')
+          
+          // 如果二级机构未选择或与三级机构的父级不一致，则填充二级机构
+          if (!currentSecondOrgId || currentSecondOrgId !== org.parentId) {
+            form.setFieldsValue({ secondOrgId: org.parentId })
+          }
+          
+          // 获取二级机构详情，找到一级机构
+          const secondOrgResponse = await organizationService.getById(org.parentId)
+          if (secondOrgResponse.code === 200 && secondOrgResponse.data) {
+            const secondOrg = secondOrgResponse.data
+            if (secondOrg.parentId) {
+              // 如果一级机构未选择或与二级机构的父级不一致，则填充一级机构
+              if (!currentFirstOrgId || currentFirstOrgId !== secondOrg.parentId) {
+                form.setFieldsValue({ firstOrgId: secondOrg.parentId })
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('获取三级机构详情失败:', error)
+    }
+  }
+
+  const handleLevel3Change = async (value) => {
+    if (value) {
+      // 填充上级机构
+      await fillParentOrgsForThirdOrg(value)
+      // 加载该三级机构的职位
+      await loadPositions({ thirdOrgId: value })
+    } else {
+      // 如果二级机构已选择，加载二级机构下的职位；如果一级机构已选择，加载一级机构下的职位；否则加载所有职位
+      const secondOrgId = form.getFieldValue('secondOrgId')
+      const firstOrgId = form.getFieldValue('firstOrgId')
+      if (secondOrgId) {
+        await loadPositions({ secondOrgId })
+      } else if (firstOrgId) {
+        await loadPositions({ firstOrgId })
+      } else {
+        await loadAllPositions()
+      }
+    }
     form.setFieldsValue({ positionId: undefined, salaryStandardId: undefined })
-    setPositions([])
-    loadPositions(value)
   }
 
   const loadSalaryStandard = async () => {
@@ -135,6 +276,49 @@ const ArchiveRegister = () => {
   }
 
   const handlePositionChange = async (value) => {
+    if (value) {
+      // 获取职位详情，自动填充剩余机构
+      try {
+        const response = await positionService.getDetail(value)
+        if (response.code === 200 && response.data) {
+          const position = response.data
+          if (position.thirdOrgId) {
+            const currentFirstOrgId = form.getFieldValue('firstOrgId')
+            const currentSecondOrgId = form.getFieldValue('secondOrgId')
+            const currentThirdOrgId = form.getFieldValue('thirdOrgId')
+            
+            // 设置三级机构（不触发handleLevel3Change，避免清空positionId）
+            if (!currentThirdOrgId || currentThirdOrgId !== position.thirdOrgId) {
+              form.setFieldsValue({ thirdOrgId: position.thirdOrgId })
+            }
+            
+            // 获取三级机构详情，填充上级机构
+            const thirdOrgResponse = await organizationService.getById(position.thirdOrgId)
+            if (thirdOrgResponse.code === 200 && thirdOrgResponse.data) {
+              const thirdOrg = thirdOrgResponse.data
+              
+              // 如果二级机构未选择或与职位所属的二级机构不一致，则填充
+              if (thirdOrg.parentId && (!currentSecondOrgId || currentSecondOrgId !== thirdOrg.parentId)) {
+                form.setFieldsValue({ secondOrgId: thirdOrg.parentId })
+                
+                // 获取二级机构详情，填充一级机构
+                const secondOrgResponse = await organizationService.getById(thirdOrg.parentId)
+                if (secondOrgResponse.code === 200 && secondOrgResponse.data) {
+                  const secondOrg = secondOrgResponse.data
+                  
+                  // 如果一级机构未选择或与职位所属的一级机构不一致，则填充
+                  if (secondOrg.parentId && (!currentFirstOrgId || currentFirstOrgId !== secondOrg.parentId)) {
+                    form.setFieldsValue({ firstOrgId: secondOrg.parentId })
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('获取职位详情失败:', error)
+      }
+    }
     await loadSalaryStandard()
   }
 
@@ -247,7 +431,14 @@ const ArchiveRegister = () => {
               label="一级机构"
               rules={[{ required: true, message: '请选择一级机构' }]}
             >
-              <Select placeholder="选择一级机构" onChange={handleLevel1Change}>
+              <Select 
+                placeholder="选择一级机构（或先选择二级/三级机构自动填充）" 
+                onChange={handleLevel1Change}
+                showSearch
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+              >
                 {level1Orgs.map(org => (
                   <Select.Option key={org.orgId} value={org.orgId}>
                     {org.orgName}
@@ -262,7 +453,14 @@ const ArchiveRegister = () => {
               label="二级机构"
               rules={[{ required: true, message: '请选择二级机构' }]}
             >
-              <Select placeholder="选择二级机构" onChange={handleLevel2Change}>
+              <Select 
+                placeholder="选择二级机构（选择后自动填充一级机构）" 
+                onChange={handleLevel2Change}
+                showSearch
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+              >
                 {level2Orgs.map(org => (
                   <Select.Option key={org.orgId} value={org.orgId}>
                     {org.orgName}
@@ -277,7 +475,14 @@ const ArchiveRegister = () => {
               label="三级机构"
               rules={[{ required: true, message: '请选择三级机构' }]}
             >
-              <Select placeholder="选择三级机构" onChange={handleLevel3Change}>
+              <Select 
+                placeholder="选择三级机构（选择后自动填充上级机构）" 
+                onChange={handleLevel3Change}
+                showSearch
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+              >
                 {level3Orgs.map(org => (
                   <Select.Option key={org.orgId} value={org.orgId}>
                     {org.orgName}
@@ -295,7 +500,14 @@ const ArchiveRegister = () => {
               label="职位名称"
               rules={[{ required: true, message: '请选择职位名称' }]}
             >
-              <Select placeholder="选择职位名称" onChange={handlePositionChange}>
+              <Select 
+                placeholder="选择职位名称（选择后自动填充三级机构）" 
+                onChange={handlePositionChange}
+                showSearch
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+              >
                 {positions.map(pos => (
                   <Select.Option key={pos.positionId} value={pos.positionId}>
                     {pos.positionName}

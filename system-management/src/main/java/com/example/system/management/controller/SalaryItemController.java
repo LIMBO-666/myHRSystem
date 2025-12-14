@@ -18,12 +18,12 @@ import java.util.stream.Collectors;
 
 /**
  * 薪酬项目设置 Controller
- * 只有人力资源经理可以访问
+ * 只有薪酬经理可以访问
  */
 @RestController
 @RequestMapping("/api/salary-items")
 @RequiredArgsConstructor
-@RequireRole({"HR_MANAGER"})
+@RequireRole({"SALARY_MANAGER"})
 public class SalaryItemController {
 
     private final SalaryItemService salaryItemService;
@@ -77,16 +77,43 @@ public class SalaryItemController {
 
     /**
      * 创建薪酬项目
+     * 只有薪酬经理可以访问
      */
     @PostMapping
+    @RequireRole({"SALARY_MANAGER"})
     public ApiResponse<SalaryItemResponse> createSalaryItem(@Valid @RequestBody CreateSalaryItemRequest request) {
-        // 验证项目编号唯一性
-        SalaryItem existing = salaryItemService.getByItemCode(request.getItemCode());
-        if (existing != null) {
+        // 验证项目编号唯一性（只检查激活状态的项目）
+        SalaryItem existingActive = salaryItemService.getByItemCode(request.getItemCode());
+        if (existingActive != null) {
             return ApiResponse.error(400, "项目编号已存在");
         }
+        
+        // 检查是否有已删除的同项目代码（允许重新使用已删除项目的代码）
+        SalaryItem existingInactive = salaryItemService.getByItemCodeIncludingInactive(request.getItemCode());
+        SalaryItem item;
+        
+        if (existingInactive != null && OrgStatus.INACTIVE.getCode().equals(existingInactive.getStatus())) {
+            // 如果存在已删除的项目，恢复并更新它
+            item = existingInactive;
+            item.setItemName(request.getItemName());
+            item.setItemType(request.getItemType());
+            item.setCalculationRule(request.getCalculationRule());
+            item.setSortOrder(request.getSortOrder());
+            item.setStatus(OrgStatus.ACTIVE.getCode());
+            salaryItemService.updateById(item);
+            return ApiResponse.success("创建成功（已恢复已删除的项目）", convertToResponse(item));
+        }
 
-        SalaryItem item = new SalaryItem();
+        // 验证排序值唯一性
+        if (request.getSortOrder() != null) {
+            SalaryItem existingBySortOrder = salaryItemService.getBySortOrder(request.getSortOrder());
+            if (existingBySortOrder != null) {
+                return ApiResponse.error(400, "排序值已存在，请使用其他排序值");
+            }
+        }
+
+        // 创建新项目
+        item = new SalaryItem();
         item.setItemCode(request.getItemCode());
         item.setItemName(request.getItemName());
         item.setItemType(request.getItemType());
@@ -100,8 +127,10 @@ public class SalaryItemController {
 
     /**
      * 更新薪酬项目
+     * 只有薪酬经理可以访问
      */
     @PutMapping("/{itemId}")
+    @RequireRole({"SALARY_MANAGER"})
     public ApiResponse<SalaryItemResponse> updateSalaryItem(@PathVariable("itemId") Long itemId,
                                                              @Valid @RequestBody UpdateSalaryItemRequest request) {
         SalaryItem item = salaryItemService.getById(itemId);
@@ -116,6 +145,11 @@ public class SalaryItemController {
             item.setCalculationRule(request.getCalculationRule());
         }
         if (request.getSortOrder() != null) {
+            // 验证排序值唯一性（排除当前项目）
+            SalaryItem existingBySortOrder = salaryItemService.getBySortOrder(request.getSortOrder());
+            if (existingBySortOrder != null && !existingBySortOrder.getItemId().equals(itemId)) {
+                return ApiResponse.error(400, "排序值已存在，请使用其他排序值");
+            }
             item.setSortOrder(request.getSortOrder());
         }
 
@@ -125,8 +159,10 @@ public class SalaryItemController {
 
     /**
      * 删除薪酬项目（软删除）
+     * 只有薪酬经理可以访问
      */
     @DeleteMapping("/{itemId}")
+    @RequireRole({"SALARY_MANAGER"})
     public ApiResponse<Void> deleteSalaryItem(@PathVariable("itemId") Long itemId) {
         SalaryItem item = salaryItemService.getById(itemId);
         if (item == null) {

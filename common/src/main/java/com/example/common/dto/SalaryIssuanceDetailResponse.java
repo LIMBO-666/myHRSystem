@@ -3,6 +3,8 @@ package com.example.common.dto;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 薪酬发放明细响应DTO
@@ -102,5 +104,16 @@ public class SalaryIssuanceDetailResponse {
      * 实发金额
      */
     private BigDecimal netPay;
+
+    // ========== 动态薪酬项目（用于存储新添加的项目，如S010等） ==========
+    /**
+     * 动态薪酬项目Map，key为项目代码（如S010），value为金额
+     * 用于存储无法映射到固定字段的新项目
+     */
+    private Map<String, BigDecimal> dynamicItems;
+
+    public SalaryIssuanceDetailResponse() {
+        this.dynamicItems = new HashMap<>();
+    }
 }
 

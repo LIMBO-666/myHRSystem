@@ -104,7 +104,9 @@ const AppRoutes = () => {
         <Route path="org-level2" element={<ProtectedRoute roles={['HR_MANAGER']}><OrgLevel2 /></ProtectedRoute>} />
         <Route path="org-level3" element={<ProtectedRoute roles={['HR_MANAGER']}><OrgLevel3 /></ProtectedRoute>} />
         <Route path="position" element={<ProtectedRoute roles={['HR_MANAGER']}><Position /></ProtectedRoute>} />
-        <Route path="salary-item" element={<ProtectedRoute roles={['HR_MANAGER']}><SalaryItem /></ProtectedRoute>} />
+        
+        {/* 薪酬项目管理 - 只有薪酬经理可以访问 */}
+        <Route path="salary-item" element={<ProtectedRoute roles={['SALARY_MANAGER']}><SalaryItem /></ProtectedRoute>} />
 
         {/* 员工档案管理 */}
         <Route path="archive-register" element={<ProtectedRoute roles={['HR_SPECIALIST']}><ArchiveRegister /></ProtectedRoute>} />

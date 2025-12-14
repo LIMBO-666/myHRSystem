@@ -79,71 +79,208 @@ const SalaryStandardRegister = () => {
     }
   }
 
-  // 判断是否为三险一金（需要自动计算）
-  const isAutoCalculated = (itemName) => {
-    const autoCalculatedItems = ['养老保险', '医疗保险', '失业保险', '住房公积金']
-    return autoCalculatedItems.includes(itemName)
+  // 判断项目是否有计算规则（需要自动计算）
+  const isAutoCalculated = (item) => {
+    return item && item.calculationRule && item.calculationRule.trim() !== ''
   }
 
-  // 根据基本工资计算三险一金
-  const calculateInsurance = (itemName, basicSalary) => {
-    if (!basicSalary || basicSalary <= 0) return 0
-    const salary = parseFloat(basicSalary)
-    
-    switch (itemName) {
-      case '养老保险':
-        return (salary * 0.08).toFixed(2)
-      case '医疗保险':
-        return (salary * 0.02 + 3).toFixed(2)
-      case '失业保险':
-        return (salary * 0.005).toFixed(2)
-      case '住房公积金':
-        return (salary * 0.08).toFixed(2)
-      default:
-        return 0
+  // 解析计算规则字符串，格式：项目代码+运算符+数字，例如：S001*8 或 基本工资*8% 或 基本工资*2%+3
+  const parseCalculationRule = (rule) => {
+    if (!rule || !rule.trim()) {
+      return null
     }
+    
+    // 先尝试匹配复合运算：基本工资*2%+3
+    const compoundMatch = rule.match(/(.+?)([*/])(\d+(?:\.\d+)?)%([+\-])(\d+(?:\.\d+)?)/)
+    if (compoundMatch) {
+      const baseItemIdentifier = compoundMatch[1].trim()
+      const firstOperator = compoundMatch[2] // * 或 /
+      const firstValue = parseFloat(compoundMatch[3])
+      const secondOperator = compoundMatch[4] // + 或 -
+      const secondValue = parseFloat(compoundMatch[5])
+      
+      // 如果是项目名称，查找对应的项目代码
+      let baseItemCode = baseItemIdentifier
+      if (!baseItemIdentifier.startsWith('S')) {
+        const foundItem = salaryItems.find(item => item.itemName === baseItemIdentifier)
+        if (foundItem) {
+          baseItemCode = foundItem.itemCode
+        } else {
+          baseItemCode = baseItemIdentifier
+        }
+      }
+      
+      return {
+        baseItemCode,
+        operator: firstOperator,
+        value: firstValue,
+        secondOperator: secondOperator,
+        secondValue: secondValue,
+        isCompound: true,
+        originalIdentifier: baseItemIdentifier
+      }
+    }
+    
+    // 匹配简单运算：项目代码/名称+运算符+数字（可能带%）
+    const match = rule.match(/(.+?)([+\-*/])(\d+(?:\.\d+)?)(%?)/)
+    if (match) {
+      const baseItemIdentifier = match[1].trim()
+      const operator = match[2]
+      let value = parseFloat(match[3])
+      const hasPercent = match[4] === '%'
+      
+      // 如果是项目名称，查找对应的项目代码
+      let baseItemCode = baseItemIdentifier
+      if (!baseItemIdentifier.startsWith('S')) {
+        const foundItem = salaryItems.find(item => item.itemName === baseItemIdentifier)
+        if (foundItem) {
+          baseItemCode = foundItem.itemCode
+        } else {
+          baseItemCode = baseItemIdentifier
+        }
+      }
+      
+      return {
+        baseItemCode,
+        operator,
+        value,
+        isCompound: false,
+        originalIdentifier: baseItemIdentifier
+      }
+    }
+    
+    return null
   }
 
-  // 获取基本工资金额
-  const getBasicSalary = () => {
+  // 根据计算规则计算金额
+  const calculateByRule = (item, formValues) => {
+    if (!isAutoCalculated(item)) {
+      return null
+    }
+    
+    const parsed = parseCalculationRule(item.calculationRule)
+    if (!parsed) {
+      return null
+    }
+    
+    // 查找基础项目
+    const baseItem = salaryItems.find(i => i.itemCode === parsed.baseItemCode)
+    if (!baseItem) {
+      return null
+    }
+    
+    // 获取基础项目的金额
+    const baseAmount = formValues[`item_${baseItem.itemId}`] || 0
+    if (!baseAmount || baseAmount <= 0) {
+      return 0
+    }
+    
+    const base = parseFloat(baseAmount)
+    let result = 0
+    
+    // 处理复合运算：基本工资*2%+3
+    if (parsed.isCompound) {
+      // 先计算第一部分：base * value / 100 或 base / value / 100
+      switch (parsed.operator) {
+        case '*':
+          result = base * (parsed.value / 100)
+          break
+        case '/':
+          result = base / (parsed.value / 100)
+          break
+        default:
+          return null
+      }
+      
+      // 然后计算第二部分：result + secondValue 或 result - secondValue
+      switch (parsed.secondOperator) {
+        case '+':
+          result = result + parsed.secondValue
+          break
+        case '-':
+          result = result - parsed.secondValue
+          break
+        default:
+          return null
+      }
+    } else {
+      // 处理简单运算
+      switch (parsed.operator) {
+        case '+':
+          result = base + parsed.value
+          break
+        case '-':
+          result = base - parsed.value
+          break
+        case '*':
+          // 乘除运算符，value是百分比
+          result = base * (parsed.value / 100)
+          break
+        case '/':
+          // 乘除运算符，value是百分比
+          result = base / (parsed.value / 100)
+          break
+        default:
+          return null
+      }
+    }
+    
+    return parseFloat(result.toFixed(2))
+  }
+
+  // 获取指定项目的金额
+  const getItemAmount = (itemCode) => {
     const values = form.getFieldsValue()
-    const basicSalaryItem = salaryItems.find(item => item.itemName === '基本工资')
-    if (basicSalaryItem) {
-      const amount = values[`item_${basicSalaryItem.itemId}`]
-      return amount || 0
+    const item = salaryItems.find(i => i.itemCode === itemCode)
+    if (item) {
+      return values[`item_${item.itemId}`] || 0
     }
     return 0
   }
 
-  // 处理基本工资变化，自动计算三险一金
-  const handleBasicSalaryChange = () => {
-    const basicSalary = getBasicSalary()
+  // 处理任何项目变化，自动计算有计算规则的项目
+  const handleItemChange = (changedItemCode) => {
     const formValues = form.getFieldsValue()
+    const updates = {}
     
+    // 遍历所有有计算规则的项目
     salaryItems.forEach(item => {
-      if (isAutoCalculated(item.itemName)) {
-        const calculatedAmount = calculateInsurance(item.itemName, basicSalary)
-        form.setFieldsValue({
-          [`item_${item.itemId}`]: parseFloat(calculatedAmount)
-        })
+      if (isAutoCalculated(item)) {
+        const calculatedAmount = calculateByRule(item, formValues)
+        if (calculatedAmount !== null) {
+          updates[`item_${item.itemId}`] = calculatedAmount
+        }
       }
     })
+    
+    // 批量更新表单值
+    if (Object.keys(updates).length > 0) {
+      form.setFieldsValue(updates)
+    }
   }
 
   const handleSubmit = async (values) => {
     setLoading(true)
     try {
-      // 构建薪酬项目明细列表
+      // 构建薪酬项目明细列表（提交所有项目，包括金额为0的）
       const items = salaryItems.map(item => {
-        const amount = values[`item_${item.itemId}`] || 0
-        const isCalculated = isAutoCalculated(item.itemName)
+        let amount = values[`item_${item.itemId}`] || 0
+        
+        // 如果有计算规则，重新计算一次确保准确性
+        if (isAutoCalculated(item)) {
+          const calculatedAmount = calculateByRule(item, values)
+          if (calculatedAmount !== null) {
+            amount = calculatedAmount
+          }
+        }
         
         return {
           itemId: item.itemId,
           amount: parseFloat(amount).toFixed(2),
-          isCalculated: isCalculated
+          isCalculated: isAutoCalculated(item)
         }
-      }).filter(item => item.amount > 0) // 只提交金额大于0的项目
+      })
+      // 移除过滤：提交所有项目，包括金额为0的，这样详情中可以看到所有项目
 
       const submitData = {
         standardName: values.standardName,
@@ -289,8 +426,34 @@ const SalaryStandardRegister = () => {
 
         <Row gutter={16}>
           {salaryItems.map(item => {
-            const isAutoCalc = isAutoCalculated(item.itemName)
+            const isAutoCalc = isAutoCalculated(item)
             const fieldName = `item_${item.itemId}`
+            
+            // 格式化计算规则显示
+            const formatCalculationRule = () => {
+              if (!isAutoCalc) return ''
+              
+              const parsed = parseCalculationRule(item.calculationRule)
+              if (!parsed) return item.calculationRule
+              
+              const baseItem = salaryItems.find(i => i.itemCode === parsed.baseItemCode)
+              const baseItemName = baseItem ? baseItem.itemName : parsed.baseItemCode
+              
+              const operatorMap = {
+                '+': '+',
+                '-': '-',
+                '*': '×',
+                '/': '÷'
+              }
+              const operator = operatorMap[parsed.operator] || parsed.operator
+              
+              // 如果是乘除，显示百分比
+              if (parsed.operator === '*' || parsed.operator === '/') {
+                return `计算方式: ${baseItemName} ${operator} ${parsed.value}%`
+              } else {
+                return `计算方式: ${baseItemName} ${operator} ${parsed.value}`
+              }
+            }
             
             return (
               <Col span={8} key={item.itemId} style={{ marginBottom: 16 }}>
@@ -315,9 +478,8 @@ const SalaryStandardRegister = () => {
                     placeholder="请输入金额"
                     disabled={isAutoCalc}
                     onChange={(value) => {
-                      if (item.itemName === '基本工资') {
-                        handleBasicSalaryChange()
-                      }
+                      // 当任何项目变化时，重新计算所有有计算规则的项目
+                      handleItemChange(item.itemCode)
                     }}
                     formatter={value => value ? `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
                     parser={value => value.replace(/¥\s?|(,*)/g, '')}
@@ -325,10 +487,7 @@ const SalaryStandardRegister = () => {
                 </Form.Item>
                 {isAutoCalc && (
                   <div style={{ fontSize: '12px', color: '#999', marginTop: -16, marginBottom: 8 }}>
-                    {item.itemName === '养老保险' && '计算方式: 基本工资 × 8%'}
-                    {item.itemName === '医疗保险' && '计算方式: 基本工资 × 2% + 3元'}
-                    {item.itemName === '失业保险' && '计算方式: 基本工资 × 0.5%'}
-                    {item.itemName === '住房公积金' && '计算方式: 基本工资 × 8%'}
+                    {formatCalculationRule()}
                   </div>
                 )}
               </Col>

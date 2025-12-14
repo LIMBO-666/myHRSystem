@@ -7,11 +7,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.common.entity.EmployeeArchive;
 import com.example.common.entity.Organization;
+import com.example.common.entity.SalaryStandard;
 import com.example.common.enums.EmployeeArchiveStatus;
 import com.example.storage.mapper.EmployeeArchiveMapper;
 import com.example.storage.service.EmployeeArchiveService;
 import com.example.storage.service.OrganizationService;
+import com.example.storage.service.SalaryStandardService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,10 @@ public class EmployeeArchiveServiceImpl extends ServiceImpl<EmployeeArchiveMappe
 
     @Autowired
     private OrganizationService organizationService;
+    
+    @Autowired
+    @Lazy
+    private SalaryStandardService salaryStandardService;
 
     @Override
     public List<EmployeeArchive> getByThirdOrgId(Long thirdOrgId) {
@@ -249,12 +256,27 @@ public class EmployeeArchiveServiceImpl extends ServiceImpl<EmployeeArchiveMappe
             throw new RuntimeException("档案状态不是待复核，无法进行复核操作");
         }
 
+        // 如果薪酬标准ID为空，尝试根据职位和职称自动关联已通过的薪酬标准
+        Long salaryStandardId = archive.getSalaryStandardId();
+        if (salaryStandardId == null && archive.getPositionId() != null && archive.getJobTitle() != null) {
+            SalaryStandard standard = salaryStandardService.getApprovedByPositionIdAndJobTitle(
+                    archive.getPositionId(), archive.getJobTitle());
+            if (standard != null) {
+                salaryStandardId = standard.getStandardId();
+            }
+        }
+
         LambdaUpdateWrapper<EmployeeArchive> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(EmployeeArchive::getArchiveId, archiveId)
                .set(EmployeeArchive::getStatus, EmployeeArchiveStatus.NORMAL.getCode())
                .set(EmployeeArchive::getReviewerId, reviewerId)
                .set(EmployeeArchive::getReviewTime, LocalDateTime.now())
                .set(EmployeeArchive::getReviewComments, reviewComments);
+        
+        // 如果找到了薪酬标准，自动关联
+        if (salaryStandardId != null) {
+            wrapper.set(EmployeeArchive::getSalaryStandardId, salaryStandardId);
+        }
 
         return update(wrapper);
     }
@@ -297,6 +319,15 @@ public class EmployeeArchiveServiceImpl extends ServiceImpl<EmployeeArchiveMappe
                 age--;
             }
             updatedArchive.setAge(age);
+        }
+
+        // 如果薪酬标准ID为空，尝试根据职位和职称自动关联已通过的薪酬标准
+        if (updatedArchive.getSalaryStandardId() == null && updatedArchive.getPositionId() != null && updatedArchive.getJobTitle() != null) {
+            SalaryStandard standard = salaryStandardService.getApprovedByPositionIdAndJobTitle(
+                    updatedArchive.getPositionId(), updatedArchive.getJobTitle());
+            if (standard != null) {
+                updatedArchive.setSalaryStandardId(standard.getStandardId());
+            }
         }
 
         // 使用 updateById 更新所有字段（包括 null 字段，确保清空操作生效）

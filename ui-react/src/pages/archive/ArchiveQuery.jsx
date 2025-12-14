@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import dayjs from 'dayjs'
 
 const { TextArea } = Input
+const { RangePicker } = DatePicker
 
 // 民族选项
 const ethnicityOptions = [
@@ -97,19 +98,25 @@ const ArchiveQuery = () => {
   const loadData = async (params = {}) => {
     setLoading(true)
     try {
+      // 确保page和size都是有效的数字
+      const page = params.page !== undefined && params.page !== null ? Number(params.page) : pagination.current
+      const size = params.size !== undefined && params.size !== null ? Number(params.size) : pagination.pageSize
+      
       const queryParams = {
-        page: pagination.current,
-        size: pagination.pageSize,
-        ...params
+        ...params,
+        page: page > 0 ? page : 1,
+        size: size > 0 ? size : 10
       }
       
       const response = await employeeArchiveService.query(queryParams)
       if (response.code === 200) {
         setData(response.data?.list || [])
-        setPagination({
-          ...pagination,
+        setPagination(prev => ({
+          ...prev,
+          current: queryParams.page,
+          pageSize: queryParams.size,
           total: response.data?.total || 0
-        })
+        }))
       }
     } catch (error) {
       message.error('查询失败')
@@ -126,8 +133,11 @@ const ArchiveQuery = () => {
     if (values.secondOrgId) params.secondOrgId = values.secondOrgId
     if (values.thirdOrgId) params.thirdOrgId = values.thirdOrgId
     if (values.positionId) params.positionId = values.positionId
-    if (values.startDate) params.startDate = values.startDate.format('YYYY-MM-DD')
-    if (values.endDate) params.endDate = values.endDate.format('YYYY-MM-DD')
+    // 处理登记时间范围
+    if (values.registrationTime && values.registrationTime.length === 2) {
+      params.startDate = values.registrationTime[0].format('YYYY-MM-DD')
+      params.endDate = values.registrationTime[1].format('YYYY-MM-DD')
+    }
     
     setPagination({ ...pagination, current: 1 })
     loadData(params)
@@ -142,9 +152,51 @@ const ArchiveQuery = () => {
     loadData()
   }
 
-  const handleTableChange = (newPagination) => {
-    setPagination(newPagination)
-    loadData()
+  const handleTableChange = (newPagination, filters, sorter) => {
+    const values = form.getFieldsValue()
+    const params = {}
+    
+    // 保持查询条件
+    if (values.firstOrgId) params.firstOrgId = values.firstOrgId
+    if (values.secondOrgId) params.secondOrgId = values.secondOrgId
+    if (values.thirdOrgId) params.thirdOrgId = values.thirdOrgId
+    if (values.positionId) params.positionId = values.positionId
+    // 处理登记时间范围
+    if (values.registrationTime && values.registrationTime.length === 2) {
+      params.startDate = values.registrationTime[0].format('YYYY-MM-DD')
+      params.endDate = values.registrationTime[1].format('YYYY-MM-DD')
+    }
+    
+    // 从newPagination对象中获取页码和每页数量
+    let page, size
+    if (typeof newPagination === 'object' && newPagination !== null) {
+      page = Number(newPagination.current) || pagination.current
+      size = Number(newPagination.pageSize) || pagination.pageSize
+    } else if (typeof newPagination === 'number') {
+      page = newPagination
+      size = pagination.pageSize
+    } else {
+      page = pagination.current
+      size = pagination.pageSize
+    }
+    
+    // 确保页码和每页数量都是有效数字
+    page = page > 0 ? page : 1
+    size = size > 0 ? size : 10
+    
+    // 先更新分页状态
+    setPagination(prev => ({
+      ...prev,
+      current: page,
+      pageSize: size
+    }))
+    
+    // 然后加载数据
+    loadData({
+      ...params,
+      page: page,
+      size: size
+    })
   }
 
   const handleView = async (record) => {
@@ -372,11 +424,8 @@ const ArchiveQuery = () => {
             ))}
           </Select>
         </Form.Item>
-        <Form.Item name="startDate" label="建档起始日期">
-          <DatePicker style={{ width: 150 }} format="YYYY/MM/DD" placeholder="年/月/日" />
-        </Form.Item>
-        <Form.Item name="endDate" label="建档结束日期">
-          <DatePicker style={{ width: 150 }} format="YYYY/MM/DD" placeholder="年/月/日" />
+        <Form.Item name="registrationTime" label="登记时间">
+          <RangePicker style={{ width: 300 }} format="YYYY/MM/DD" placeholder={['开始日期', '结束日期']} />
         </Form.Item>
         <Form.Item>
           <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
@@ -395,8 +444,16 @@ const ArchiveQuery = () => {
         dataSource={data}
         loading={loading}
         rowKey="archiveId"
-        pagination={pagination}
-        onChange={handleTableChange}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          showSizeChanger: false,
+          showTotal: (total) => `共 ${total} 条`,
+          onChange: (page, pageSize) => {
+            handleTableChange({ current: page, pageSize: pageSize })
+          }
+        }}
       />
 
       {/* 查看详情弹窗 */}

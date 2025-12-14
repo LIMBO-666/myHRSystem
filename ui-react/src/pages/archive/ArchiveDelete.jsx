@@ -120,8 +120,29 @@ const ArchiveDelete = () => {
     loadData()
   }
 
-  const handleTableChange = (newPagination) => {
-    setPagination(newPagination)
+  const handleTableChange = (newPagination, filters, sorter) => {
+    // 从newPagination对象中获取页码和每页数量
+    let page, size
+    if (typeof newPagination === 'object' && newPagination !== null) {
+      page = Number(newPagination.current) || pagination.current
+      size = Number(newPagination.pageSize) || pagination.pageSize
+    } else if (typeof newPagination === 'number') {
+      page = newPagination
+      size = pagination.pageSize
+    } else {
+      page = pagination.current
+      size = pagination.pageSize
+    }
+    
+    page = page > 0 ? page : 1
+    size = size > 0 ? size : 10
+    
+    setPagination(prev => ({
+      ...prev,
+      current: page,
+      pageSize: size
+    }))
+    
     loadData()
   }
 
@@ -295,8 +316,16 @@ const ArchiveDelete = () => {
         dataSource={data}
         loading={loading}
         rowKey="archiveId"
-        pagination={pagination}
-        onChange={handleTableChange}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          showSizeChanger: false,
+          showTotal: (total) => `共 ${total} 条`,
+          onChange: (page, pageSize) => {
+            handleTableChange({ current: page, pageSize: pageSize })
+          }
+        }}
       />
 
       <Modal

@@ -13,8 +13,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +33,10 @@ public class SalaryIssuanceController {
     private final SalaryIssuanceDetailService salaryIssuanceDetailService;
     private final OrganizationService organizationService;
     private final UserService userService;
+    private final EmployeeArchiveService employeeArchiveService;
+    private final SalaryStandardService salaryStandardService;
+    private final SalaryStandardItemService salaryStandardItemService;
+    private final SalaryItemService salaryItemService;
 
     /**
      * 获取待登记薪酬发放单列表
@@ -97,9 +105,12 @@ public class SalaryIssuanceController {
     @GetMapping("/pending-review")
     @RequireRole({"SALARY_MANAGER"})
     public ApiResponse<PageResponse<SalaryIssuanceResponse>> getPendingReviewIssuances(
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
-        IPage<SalaryIssuance> pageResult = salaryIssuanceService.getPendingReviewPage(page, size);
+            @RequestParam(value = "issuanceMonth", required = false) String issuanceMonth,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size) {
+        int pageNum = (page != null && page > 0) ? page : 1;
+        int pageSize = (size != null && size > 0) ? size : 10;
+        IPage<SalaryIssuance> pageResult = salaryIssuanceService.getPendingReviewPage(issuanceMonth, pageNum, pageSize);
 
         List<SalaryIssuanceResponse> responses = pageResult.getRecords().stream()
                 .map(this::convertToResponse)
@@ -173,13 +184,16 @@ public class SalaryIssuanceController {
             @RequestParam(value = "endDate", required = false) String endDate,
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "thirdOrgId", required = false) Long thirdOrgId,
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size) {
         LocalDate start = startDate != null ? LocalDate.parse(startDate) : null;
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : null;
 
+        int pageNum = (page != null && page > 0) ? page : 1;
+        int pageSize = (size != null && size > 0) ? size : 10;
+
         IPage<SalaryIssuance> pageResult = salaryIssuanceService.querySalaryIssuances(
-                salarySlipNumber, keyword, start, end, status, thirdOrgId, page, size);
+                salarySlipNumber, keyword, start, end, status, thirdOrgId, pageNum, pageSize);
 
         List<SalaryIssuanceResponse> responses = pageResult.getRecords().stream()
                 .map(this::convertToResponse)
@@ -228,7 +242,7 @@ public class SalaryIssuanceController {
         // 设置薪酬发放明细列表
         List<SalaryIssuanceDetail> details = salaryIssuanceDetailService.getByIssuanceId(issuance.getIssuanceId());
         List<SalaryIssuanceDetailResponse> detailResponses = details.stream()
-                .map(this::convertDetailToResponse)
+                .map(detail -> convertDetailToResponse(detail, issuance.getIssuanceMonth()))
                 .collect(Collectors.toList());
         response.setDetails(detailResponses);
 
@@ -237,10 +251,65 @@ public class SalaryIssuanceController {
 
     /**
      * 转换薪酬发放明细为响应对象
+     * 根据发放月份重新计算动态项目，只包含在发放月份之前创建的薪酬项目
      */
-    private SalaryIssuanceDetailResponse convertDetailToResponse(SalaryIssuanceDetail detail) {
+    private SalaryIssuanceDetailResponse convertDetailToResponse(SalaryIssuanceDetail detail, LocalDate issuanceMonth) {
         SalaryIssuanceDetailResponse response = new SalaryIssuanceDetailResponse();
         BeanUtils.copyProperties(detail, response);
+        
+        // 根据发放月份重新计算动态项目，只包含在发放月份之前创建的薪酬项目
+        if (issuanceMonth != null && detail.getEmployeeId() != null) {
+            LocalDate nextMonth = issuanceMonth.plusMonths(1);
+            LocalDateTime nextMonthStart = nextMonth.atStartOfDay();
+            
+            // 获取员工信息
+            EmployeeArchive employee = employeeArchiveService.getById(detail.getEmployeeId());
+            if (employee != null && employee.getSalaryStandardId() != null) {
+                // 获取薪酬标准
+                SalaryStandard standard = salaryStandardService.getById(employee.getSalaryStandardId());
+                if (standard != null) {
+                    // 获取所有薪酬项目
+                    List<SalaryItem> allSalaryItems = salaryItemService.list();
+                    Map<Long, SalaryItem> salaryItemMap = allSalaryItems.stream()
+                            .collect(Collectors.toMap(SalaryItem::getItemId, item -> item));
+                    
+                    // 获取薪酬标准项目
+                    List<SalaryStandardItem> standardItems = salaryStandardItemService.getByStandardId(standard.getStandardId());
+                    
+                    Map<String, BigDecimal> dynamicItems = new HashMap<>();
+                    
+                    for (SalaryStandardItem standardItem : standardItems) {
+                        SalaryItem salaryItem = salaryItemMap.get(standardItem.getItemId());
+                        if (salaryItem != null) {
+                            // 只包含在发放月份之前创建的薪酬项目
+                            if (salaryItem.getCreateTime() != null && nextMonthStart != null) {
+                                if (!salaryItem.getCreateTime().isBefore(nextMonthStart)) {
+                                    // 薪酬项目是在发放月份之后创建的，跳过
+                                    continue;
+                                }
+                            }
+                            
+                            BigDecimal amount = standardItem.getAmount() != null ? standardItem.getAmount() : BigDecimal.ZERO;
+                            String itemCode = salaryItem.getItemCode();
+                            
+                            // 检查是否映射到固定字段
+                            boolean isFixedField = "S001".equals(itemCode) || "S002".equals(itemCode) ||
+                                    "S003".equals(itemCode) || "S004".equals(itemCode) ||
+                                    "S006".equals(itemCode) || "S007".equals(itemCode) ||
+                                    "S008".equals(itemCode) || "S009".equals(itemCode);
+                            
+                            // 如果是新项目（无法映射到固定字段），放入dynamicItems
+                            if (!isFixedField && amount.compareTo(BigDecimal.ZERO) > 0) {
+                                dynamicItems.put(itemCode, amount);
+                            }
+                        }
+                    }
+                    
+                    response.setDynamicItems(dynamicItems);
+                }
+            }
+        }
+        
         return response;
     }
 

@@ -25,17 +25,258 @@ const SalaryStandardQuery = () => {
     total: 0
   })
 
-  // 判断是否为自动计算的项
-  const isAutoCalculated = (itemName) => {
-    const autoCalculatedItems = ['养老保险', '医疗保险', '失业保险', '住房公积金']
-    return autoCalculatedItems.includes(itemName)
+  // 判断项目是否有计算规则（需要自动计算）
+  const isAutoCalculated = (item) => {
+    if (typeof item === 'string') {
+      // 兼容旧代码：如果传入的是字符串（项目名称），返回false（不再使用硬编码）
+      return false
+    }
+    // 如果传入的是对象，检查calculationRule字段
+    return item && item.calculationRule && item.calculationRule.trim() !== ''
+  }
+
+  // 解析计算规则字符串，格式：项目代码+运算符+数字，例如：S001*8 或 基本工资*8% 或 基本工资*2%+3
+  const parseCalculationRule = (rule) => {
+    if (!rule || !rule.trim()) {
+      return null
+    }
+    
+    // 先尝试匹配复合运算：基本工资*2%+3
+    const compoundMatch = rule.match(/(.+?)([*/])(\d+(?:\.\d+)?)%([+\-])(\d+(?:\.\d+)?)/)
+    if (compoundMatch) {
+      const baseItemIdentifier = compoundMatch[1].trim()
+      const firstOperator = compoundMatch[2] // * 或 /
+      const firstValue = parseFloat(compoundMatch[3])
+      const secondOperator = compoundMatch[4] // + 或 -
+      const secondValue = parseFloat(compoundMatch[5])
+      
+      // 如果是项目名称，查找对应的项目代码
+      let baseItemCode = baseItemIdentifier
+      if (!baseItemIdentifier.startsWith('S')) {
+        const foundItem = salaryItems.find(item => item.itemName === baseItemIdentifier)
+        if (foundItem) {
+          baseItemCode = foundItem.itemCode
+        } else {
+          baseItemCode = baseItemIdentifier
+        }
+      }
+      
+      return {
+        baseItemCode,
+        operator: firstOperator,
+        value: firstValue,
+        secondOperator: secondOperator,
+        secondValue: secondValue,
+        isCompound: true,
+        originalIdentifier: baseItemIdentifier
+      }
+    }
+    
+    // 匹配简单运算：项目代码/名称+运算符+数字（可能带%）
+    const match = rule.match(/(.+?)([+\-*/])(\d+(?:\.\d+)?)(%?)/)
+    if (match) {
+      const baseItemIdentifier = match[1].trim()
+      const operator = match[2]
+      let value = parseFloat(match[3])
+      const hasPercent = match[4] === '%'
+      
+      // 如果是项目名称，查找对应的项目代码
+      let baseItemCode = baseItemIdentifier
+      if (!baseItemIdentifier.startsWith('S')) {
+        const foundItem = salaryItems.find(item => item.itemName === baseItemIdentifier)
+        if (foundItem) {
+          baseItemCode = foundItem.itemCode
+        } else {
+          baseItemCode = baseItemIdentifier
+        }
+      }
+      
+      return {
+        baseItemCode,
+        operator,
+        value,
+        isCompound: false,
+        originalIdentifier: baseItemIdentifier
+      }
+    }
+    
+    return null
+  }
+
+  // 根据计算规则计算金额（基于项目列表中的金额）
+  const calculateByRule = (item, itemsMap) => {
+    if (!isAutoCalculated(item)) {
+      return null
+    }
+    
+    const parsed = parseCalculationRule(item.calculationRule)
+    if (!parsed) {
+      return null
+    }
+    
+    // 查找基础项目
+    const baseItem = salaryItems.find(i => i.itemCode === parsed.baseItemCode)
+    if (!baseItem) {
+      return null
+    }
+    
+    // 从itemsMap中获取基础项目的金额
+    const baseItemData = itemsMap.get(baseItem.itemId)
+    const baseAmount = baseItemData?.amount || 0
+    if (!baseAmount || baseAmount <= 0) {
+      return 0
+    }
+    
+    const base = parseFloat(baseAmount)
+    let result = 0
+    
+    // 处理复合运算：基本工资*2%+3
+    if (parsed.isCompound) {
+      // 先计算第一部分：base * value / 100 或 base / value / 100
+      switch (parsed.operator) {
+        case '*':
+          result = base * (parsed.value / 100)
+          break
+        case '/':
+          result = base / (parsed.value / 100)
+          break
+        default:
+          return null
+      }
+      
+      // 然后计算第二部分：result + secondValue 或 result - secondValue
+      switch (parsed.secondOperator) {
+        case '+':
+          result = result + parsed.secondValue
+          break
+        case '-':
+          result = result - parsed.secondValue
+          break
+        default:
+          return null
+      }
+    } else {
+      // 处理简单运算
+      switch (parsed.operator) {
+        case '+':
+          result = base + parsed.value
+          break
+        case '-':
+          result = base - parsed.value
+          break
+        case '*':
+          // 乘除运算符，value是百分比
+          result = base * (parsed.value / 100)
+          break
+        case '/':
+          // 乘除运算符，value是百分比
+          result = base / (parsed.value / 100)
+          break
+        default:
+          return null
+      }
+    }
+    
+    return parseFloat(result.toFixed(2))
+  }
+
+  // 根据计算规则计算金额（基于项目数组）
+  const calculateByRuleFromArray = (item, itemsArray) => {
+    if (!isAutoCalculated(item)) {
+      return null
+    }
+    
+    const parsed = parseCalculationRule(item.calculationRule)
+    if (!parsed) {
+      return null
+    }
+    
+    // 查找基础项目
+    const baseItem = salaryItems.find(i => i.itemCode === parsed.baseItemCode)
+    if (!baseItem) {
+      return null
+    }
+    
+    // 从itemsArray中获取基础项目的金额
+    const baseItemData = itemsArray.find(i => i.itemId === baseItem.itemId)
+    const baseAmount = baseItemData?.amount || 0
+    if (!baseAmount || baseAmount <= 0) {
+      return 0
+    }
+    
+    const base = parseFloat(baseAmount)
+    let result = 0
+    
+    // 处理复合运算：基本工资*2%+3
+    if (parsed.isCompound) {
+      // 先计算第一部分：base * value / 100 或 base / value / 100
+      switch (parsed.operator) {
+        case '*':
+          result = base * (parsed.value / 100)
+          break
+        case '/':
+          result = base / (parsed.value / 100)
+          break
+        default:
+          return null
+      }
+      
+      // 然后计算第二部分：result + secondValue 或 result - secondValue
+      switch (parsed.secondOperator) {
+        case '+':
+          result = result + parsed.secondValue
+          break
+        case '-':
+          result = result - parsed.secondValue
+          break
+        default:
+          return null
+      }
+    } else {
+      // 处理简单运算
+      switch (parsed.operator) {
+        case '+':
+          result = base + parsed.value
+          break
+        case '-':
+          result = base - parsed.value
+          break
+        case '*':
+          // 乘除运算符，value是百分比
+          result = base * (parsed.value / 100)
+          break
+        case '/':
+          // 乘除运算符，value是百分比
+          result = base / (parsed.value / 100)
+          break
+        default:
+          return null
+      }
+    }
+    
+    return parseFloat(result.toFixed(2))
+  }
+
+  // 重新计算所有有计算规则的项目
+  const recalculateCalculatedItems = (items) => {
+    return items.map(item => {
+      if (isAutoCalculated(item)) {
+        const calculatedAmount = calculateByRuleFromArray(item, items)
+        if (calculatedAmount !== null) {
+          return {
+            ...item,
+            amount: calculatedAmount,
+            isCalculated: true
+          }
+        }
+      }
+      return item
+    })
   }
 
   useEffect(() => {
     loadData()
-    if (hasRole(['SALARY_SPECIALIST'])) {
-      loadSalaryItems()
-    }
+    loadSalaryItems() // 所有角色都需要加载薪酬项目列表，用于详情显示
   }, [])
 
   const loadSalaryItems = async () => {
@@ -52,19 +293,32 @@ const SalaryStandardQuery = () => {
   const loadData = async (params = {}) => {
     setLoading(true)
     try {
+      // 确保page和size都是有效的数字
+      const page = params.page !== undefined && params.page !== null ? Number(params.page) : pagination.current
+      const size = params.size !== undefined && params.size !== null ? Number(params.size) : pagination.pageSize
+      
       const queryParams = {
-        page: params.page || pagination.current,
-        size: params.size || pagination.pageSize,
-        ...params
+        ...params,
+        page: page > 0 ? page : 1,
+        size: size > 0 ? size : 10
       }
+      
+      // 调试信息
+      console.log('查询参数:', queryParams)
       
       const response = await salaryStandardService.query(queryParams)
       if (response.code === 200) {
+        console.log('查询结果:', {
+          total: response.data?.total,
+          listLength: response.data?.list?.length,
+          currentPage: queryParams.page
+        })
+        
         setData(response.data?.list || [])
         setPagination(prev => ({
           ...prev,
-          current: queryParams.page || 1,
-          pageSize: queryParams.size || 10,
+          current: queryParams.page,
+          pageSize: queryParams.size,
           total: response.data?.total || 0
         }))
       } else {
@@ -72,6 +326,7 @@ const SalaryStandardQuery = () => {
       }
     } catch (error) {
       console.error('查询失败:', error)
+      console.error('错误详情:', error.response?.data)
       if (error.response?.status === 403) {
         message.error('权限不足，无法查询薪酬标准')
       } else {
@@ -111,7 +366,9 @@ const SalaryStandardQuery = () => {
     loadData(params)
   }
 
-  const handleTableChange = (newPagination) => {
+  const handleTableChange = (newPagination, filters, sorter) => {
+    console.log('handleTableChange 被调用:', newPagination)
+    
     const values = form.getFieldsValue()
     const params = {}
     
@@ -129,17 +386,43 @@ const SalaryStandardQuery = () => {
       params.endDate = values.endDate.format('YYYY-MM-DD')
     }
     
+    // 从newPagination对象中获取页码和每页数量
+    // 注意：Ant Design Table的onChange可能传递的是页码数字，而不是对象
+    let page, size
+    if (typeof newPagination === 'object' && newPagination !== null) {
+      page = Number(newPagination.current) || pagination.current
+      size = Number(newPagination.pageSize) || pagination.pageSize
+    } else if (typeof newPagination === 'number') {
+      // 如果直接传递的是页码数字
+      page = newPagination
+      size = pagination.pageSize
+    } else {
+      // 如果参数格式不对，使用当前分页状态
+      page = pagination.current
+      size = pagination.pageSize
+    }
+    
+    // 确保页码和每页数量都是有效数字
+    page = page > 0 ? page : 1
+    size = size > 0 ? size : 10
+    
+    console.log('准备加载数据 - 页码:', page, '每页:', size)
+    
+    // 先更新分页状态
     setPagination(prev => ({
       ...prev,
-      current: newPagination.current,
-      pageSize: newPagination.pageSize
+      current: page,
+      pageSize: size
     }))
+    
+    // 然后加载数据
     loadData({
       ...params,
-      page: newPagination.current,
-      size: newPagination.pageSize
+      page: page,
+      size: size
     })
   }
+
 
   const handleView = async (record) => {
     try {
@@ -147,7 +430,65 @@ const SalaryStandardQuery = () => {
       const detailResponse = await salaryStandardService.getDetail(record.standardId)
       if (detailResponse.code === 200) {
         const detail = detailResponse.data
-        setCurrentRecord(detail)
+        
+        // 合并所有薪酬项目，确保显示所有项目（包括未填写的）
+        const allItemsMap = new Map()
+        
+        // 先添加所有薪酬项目
+        salaryItems.forEach(item => {
+          allItemsMap.set(item.itemId, {
+            itemId: item.itemId,
+            itemCode: item.itemCode,
+            itemName: item.itemName,
+            itemType: item.itemType,
+            calculationRule: item.calculationRule,
+            amount: null, // 默认没有金额
+            isCalculated: false
+          })
+        })
+        
+        // 然后用标准中的项目覆盖（如果有）
+        if (detail.items && detail.items.length > 0) {
+          detail.items.forEach(standardItem => {
+            if (allItemsMap.has(standardItem.itemId)) {
+              allItemsMap.set(standardItem.itemId, {
+                ...allItemsMap.get(standardItem.itemId),
+                amount: standardItem.amount,
+                isCalculated: standardItem.isCalculated || false
+              })
+            }
+          })
+        }
+        
+        // 转换为数组并按排序顺序排序
+        let mergedItems = Array.from(allItemsMap.values())
+          .sort((a, b) => {
+            const itemA = salaryItems.find(i => i.itemId === a.itemId)
+            const itemB = salaryItems.find(i => i.itemId === b.itemId)
+            const sortA = itemA ? (itemA.sortOrder || 0) : 0
+            const sortB = itemB ? (itemB.sortOrder || 0) : 0
+            return sortA - sortB
+          })
+        
+        // 重新计算有计算规则的项目
+        mergedItems = mergedItems.map(item => {
+          if (isAutoCalculated(item)) {
+            const calculatedAmount = calculateByRule(item, allItemsMap)
+            if (calculatedAmount !== null) {
+              return {
+                ...item,
+                amount: calculatedAmount,
+                isCalculated: true
+              }
+            }
+          }
+          return item
+        })
+        
+        setCurrentRecord({
+          ...detail,
+          items: mergedItems
+        })
         setViewModalVisible(true)
       } else {
         message.error('获取薪酬标准详情失败')
@@ -170,8 +511,51 @@ const SalaryStandardQuery = () => {
       const detailResponse = await salaryStandardService.getDetail(record.standardId)
       if (detailResponse.code === 200) {
         const detail = detailResponse.data
+        
+        // 合并所有薪酬项目，确保显示所有项目（包括未填写的）
+        const allItemsMap = new Map()
+        
+        // 先添加所有薪酬项目
+        salaryItems.forEach(item => {
+          allItemsMap.set(item.itemId, {
+            itemId: item.itemId,
+            itemCode: item.itemCode,
+            itemName: item.itemName,
+            itemType: item.itemType,
+            calculationRule: item.calculationRule,
+            amount: null, // 默认没有金额
+            isCalculated: false
+          })
+        })
+        
+        // 然后用标准中的项目覆盖（如果有）
+        if (detail.items && detail.items.length > 0) {
+          detail.items.forEach(standardItem => {
+            if (allItemsMap.has(standardItem.itemId)) {
+              allItemsMap.set(standardItem.itemId, {
+                ...allItemsMap.get(standardItem.itemId),
+                amount: standardItem.amount,
+                isCalculated: standardItem.isCalculated || false
+              })
+            }
+          })
+        }
+        
+        // 转换为数组并按排序顺序排序
+        let mergedItems = Array.from(allItemsMap.values())
+          .sort((a, b) => {
+            const itemA = salaryItems.find(i => i.itemId === a.itemId)
+            const itemB = salaryItems.find(i => i.itemId === b.itemId)
+            const sortA = itemA ? (itemA.sortOrder || 0) : 0
+            const sortB = itemB ? (itemB.sortOrder || 0) : 0
+            return sortA - sortB
+          })
+        
+        // 重新计算有计算规则的项目
+        mergedItems = recalculateCalculatedItems(mergedItems)
+        
         setCurrentRecord(detail)
-        setEditableItems(JSON.parse(JSON.stringify(detail.items || []))) // 深拷贝
+        setEditableItems(JSON.parse(JSON.stringify(mergedItems))) // 深拷贝
         updateForm.resetFields()
         updateForm.setFieldsValue({
           standardName: detail.standardName
@@ -191,11 +575,22 @@ const SalaryStandardQuery = () => {
       const values = await updateForm.validateFields()
       const submitData = {
         standardName: values.standardName,
-        items: editableItems.map(item => ({
-          itemId: item.itemId,
-          amount: item.amount || 0,
-          isCalculated: isAutoCalculated(item.itemName)
-        }))
+        items: editableItems.map(item => {
+          // 如果有计算规则，重新计算一次确保准确性
+          let amount = item.amount || 0
+          if (isAutoCalculated(item)) {
+            const calculatedAmount = calculateByRuleFromArray(item, editableItems)
+            if (calculatedAmount !== null) {
+              amount = calculatedAmount
+            }
+          }
+          
+          return {
+            itemId: item.itemId,
+            amount: parseFloat(amount).toFixed(2),
+            isCalculated: isAutoCalculated(item)
+          }
+        })
       }
       
       const response = await salaryStandardService.update(currentRecord.standardId, submitData)
@@ -370,10 +765,12 @@ const SalaryStandardQuery = () => {
             current: pagination.current,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            showSizeChanger: true,
+            showSizeChanger: false,
             showTotal: (total) => `共 ${total} 条`,
-            onChange: handleTableChange,
-            onShowSizeChange: handleTableChange
+            onChange: (page, pageSize) => {
+              console.log('分页onChange被调用:', { page, pageSize })
+              handleTableChange({ current: page, pageSize: pageSize })
+            }
           }}
         />
       </Card>
@@ -651,7 +1048,7 @@ const SalaryStandardQuery = () => {
                       dataIndex: 'amount',
                       key: 'amount',
                       render: (amount, record, index) => {
-                        if (isAutoCalculated(record.itemName)) {
+                        if (isAutoCalculated(record)) {
                           // 自动计算的项，只显示
                           return amount ? `¥${parseFloat(amount).toFixed(2)}` : '-'
                         } else {
@@ -667,7 +1064,10 @@ const SalaryStandardQuery = () => {
                               onChange={(value) => {
                                 const newItems = [...editableItems]
                                 newItems[index].amount = value || 0
-                                setEditableItems(newItems)
+                                
+                                // 重新计算所有有计算规则的项目
+                                const recalculatedItems = recalculateCalculatedItems(newItems)
+                                setEditableItems(recalculatedItems)
                               }}
                             />
                           )

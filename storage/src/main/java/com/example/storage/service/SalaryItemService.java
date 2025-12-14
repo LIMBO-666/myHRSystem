@@ -38,5 +38,21 @@ public interface SalaryItemService extends IService<SalaryItem> {
      * @return 薪酬项目
      */
     SalaryItem getByItemCode(String itemCode);
+
+    /**
+     * 根据排序顺序查询薪酬项目
+     *
+     * @param sortOrder 排序顺序
+     * @return 薪酬项目
+     */
+    SalaryItem getBySortOrder(Integer sortOrder);
+
+    /**
+     * 根据项目编号查询薪酬项目（包括已删除的）
+     *
+     * @param itemCode 项目编号
+     * @return 薪酬项目
+     */
+    SalaryItem getByItemCodeIncludingInactive(String itemCode);
 }
 

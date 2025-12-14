@@ -8,15 +8,19 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.common.dto.CreateSalaryStandardRequest;
 import com.example.common.dto.SalaryStandardItemRequest;
 import com.example.common.dto.UpdateSalaryStandardRequest;
+import com.example.common.entity.EmployeeArchive;
 import com.example.common.entity.SalaryItem;
 import com.example.common.entity.SalaryStandard;
 import com.example.common.entity.SalaryStandardItem;
+import com.example.common.enums.EmployeeArchiveStatus;
 import com.example.common.enums.SalaryStandardStatus;
 import com.example.storage.mapper.SalaryStandardMapper;
+import com.example.storage.service.EmployeeArchiveService;
 import com.example.storage.service.SalaryItemService;
 import com.example.storage.service.SalaryStandardItemService;
 import com.example.storage.service.SalaryStandardService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +41,9 @@ public class SalaryStandardServiceImpl extends ServiceImpl<SalaryStandardMapper,
     private SalaryStandardItemService salaryStandardItemService;
     @Autowired
     private SalaryItemService salaryItemService;
+    @Autowired
+    @Lazy
+    private EmployeeArchiveService employeeArchiveService;
 
     @Override
     public SalaryStandard getByPositionIdAndJobTitle(Long positionId, String jobTitle) {
@@ -73,6 +80,38 @@ public class SalaryStandardServiceImpl extends ServiceImpl<SalaryStandardMapper,
     @Override
     @Transactional(rollbackFor = Exception.class)
     public SalaryStandard createSalaryStandard(CreateSalaryStandardRequest request, Long registrarId) {
+        // 检查是否存在已通过的相同职位和职称的薪酬标准
+        SalaryStandard existingStandard = getApprovedByPositionIdAndJobTitle(
+                request.getPositionId(), request.getJobTitle());
+
+        if (existingStandard != null) {
+            // 如果存在已通过的相同职位和职称的薪酬标准，则更新它（保持标准编号不变）
+            // 更新基本信息
+            existingStandard.setStandardName(request.getStandardName());
+            existingStandard.setFormulatorId(request.getFormulatorId());
+            existingStandard.setRegistrarId(registrarId != null ? registrarId : request.getRegistrarId());
+            existingStandard.setRegistrationTime(LocalDateTime.now());
+            // 更新后状态变为待复核
+            existingStandard.setStatus(SalaryStandardStatus.PENDING_REVIEW.getCode());
+            existingStandard.setReviewerId(null);
+            existingStandard.setReviewTime(null);
+            existingStandard.setReviewComments(null);
+
+            updateById(existingStandard);
+
+            // 删除旧的明细
+            salaryStandardItemService.deleteByStandardId(existingStandard.getStandardId());
+
+            // 获取基本工资金额（用于计算三险一金）
+            BigDecimal basicSalary = getBasicSalary(request.getItems());
+
+            // 保存新的明细
+            saveStandardItems(existingStandard.getStandardId(), request.getItems(), basicSalary);
+
+            return existingStandard;
+        }
+
+        // 如果不存在已通过的相同职位和职称的薪酬标准，则创建新的
         // 生成薪酬标准编号
         String standardCode = generateStandardCode();
 
@@ -158,7 +197,29 @@ public class SalaryStandardServiceImpl extends ServiceImpl<SalaryStandardMapper,
                .set(SalaryStandard::getReviewTime, LocalDateTime.now())
                .set(SalaryStandard::getReviewComments, reviewComments);
 
-        return update(wrapper);
+        boolean result = update(wrapper);
+        
+        // 如果审核通过，自动关联到符合条件的员工档案
+        if (result) {
+            SalaryStandard approvedStandard = getById(standardId);
+            if (approvedStandard != null && approvedStandard.getPositionId() != null && approvedStandard.getJobTitle() != null) {
+                // 查找该职位和职称下，状态为正常且未关联薪酬标准的员工
+                List<EmployeeArchive> employees = employeeArchiveService.getByPositionId(approvedStandard.getPositionId());
+                employees = employees.stream()
+                        .filter(e -> EmployeeArchiveStatus.NORMAL.getCode().equals(e.getStatus()))
+                        .filter(e -> approvedStandard.getJobTitle().equals(e.getJobTitle()))
+                        .filter(e -> e.getSalaryStandardId() == null)
+                        .collect(java.util.stream.Collectors.toList());
+                
+                // 自动关联薪酬标准
+                for (EmployeeArchive employee : employees) {
+                    employee.setSalaryStandardId(approvedStandard.getStandardId());
+                    employeeArchiveService.updateById(employee);
+                }
+            }
+        }
+        
+        return result;
     }
 
     @Override
@@ -199,6 +260,9 @@ public class SalaryStandardServiceImpl extends ServiceImpl<SalaryStandardMapper,
                                                       LocalDate endDate, String status, Long positionId, String jobTitle,
                                                       int page, int size) {
         Page<SalaryStandard> pageParam = new Page<>(page, size);
+        // 设置不优化count查询，确保count查询准确
+        pageParam.setOptimizeCountSql(false);
+        
         LambdaQueryWrapper<SalaryStandard> wrapper = new LambdaQueryWrapper<>();
 
         // 薪酬标准编号模糊查询
@@ -235,9 +299,18 @@ public class SalaryStandardServiceImpl extends ServiceImpl<SalaryStandardMapper,
             wrapper.eq(SalaryStandard::getJobTitle, jobTitle);
         }
 
-        wrapper.orderByDesc(SalaryStandard::getRegistrationTime);
+        // 排序：按标准ID降序（最新的记录ID最大），确保排序稳定且所有记录都能正确显示
+        wrapper.orderByDesc(SalaryStandard::getStandardId);
 
-        return page(pageParam, wrapper);
+        IPage<SalaryStandard> result = page(pageParam, wrapper);
+        
+        // 如果count为0但实际有数据，重新计算count
+        if (result.getTotal() == 0 && !result.getRecords().isEmpty()) {
+            long actualCount = count(wrapper);
+            result.setTotal(actualCount);
+        }
+        
+        return result;
     }
 
     @Override

@@ -29,8 +29,17 @@ export const salaryStandardService = {
    * 查询薪酬标准列表
    */
   query: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString()
+    // 确保数字参数正确转换为字符串
+    const queryParams = {}
+    Object.keys(params).forEach(key => {
+      const value = params[key]
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams[key] = String(value)
+      }
+    })
+    const queryString = new URLSearchParams(queryParams).toString()
     const url = queryString ? `/salary-standards?${queryString}` : '/salary-standards'
+    console.log('请求URL:', url)
     return await apiClient.get(url)
   },
 

@@ -35,7 +35,23 @@ public class SalaryItemServiceImpl extends ServiceImpl<SalaryItemMapper, SalaryI
     @Override
     public SalaryItem getByItemCode(String itemCode) {
         LambdaQueryWrapper<SalaryItem> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SalaryItem::getItemCode, itemCode);
+        wrapper.eq(SalaryItem::getItemCode, itemCode)
+               .eq(SalaryItem::getStatus, "ACTIVE"); // 只查询激活状态的项目
+        return getOne(wrapper);
+    }
+
+    @Override
+    public SalaryItem getBySortOrder(Integer sortOrder) {
+        LambdaQueryWrapper<SalaryItem> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SalaryItem::getSortOrder, sortOrder)
+               .eq(SalaryItem::getStatus, "ACTIVE"); // 只查询激活状态的项目
+        return getOne(wrapper);
+    }
+
+    @Override
+    public SalaryItem getByItemCodeIncludingInactive(String itemCode) {
+        LambdaQueryWrapper<SalaryItem> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SalaryItem::getItemCode, itemCode); // 查询所有状态的项目
         return getOne(wrapper);
     }
 }

@@ -32,16 +32,28 @@ public class PositionController {
     private final OrganizationService organizationService;
 
     /**
-     * 获取职位列表，支持按三级机构筛选
+     * 获取职位列表，支持按一级机构、二级机构或三级机构筛选
      * 人事专员、人事经理、薪酬专员和薪酬经理都可以访问（用于档案登记和薪酬标准登记）
      */
     @GetMapping
     @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SALARY_SPECIALIST", "SALARY_MANAGER"})
-    public ApiResponse<List<PositionResponse>> getPositions(@RequestParam(value = "thirdOrgId", required = false) Long thirdOrgId) {
+    public ApiResponse<List<PositionResponse>> getPositions(
+            @RequestParam(value = "firstOrgId", required = false) Long firstOrgId,
+            @RequestParam(value = "secondOrgId", required = false) Long secondOrgId,
+            @RequestParam(value = "thirdOrgId", required = false) Long thirdOrgId) {
         List<Position> positions;
+        
         if (thirdOrgId != null) {
+            // 按三级机构查询
             positions = positionService.getByThirdOrgId(thirdOrgId);
+        } else if (secondOrgId != null) {
+            // 按二级机构查询
+            positions = positionService.getBySecondOrgId(secondOrgId);
+        } else if (firstOrgId != null) {
+            // 按一级机构查询
+            positions = positionService.getByFirstOrgId(firstOrgId);
         } else {
+            // 查询所有职位
             positions = positionService.list();
         }
 

@@ -14,6 +14,7 @@ import com.example.common.dto.SalaryIssuanceDetailUpdateRequest;
 import com.example.common.entity.*;
 import com.example.common.enums.EmployeeArchiveStatus;
 import com.example.common.enums.SalaryIssuanceStatus;
+import com.example.common.enums.SalaryStandardStatus;
 import com.example.storage.mapper.SalaryIssuanceMapper;
 import com.example.storage.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -142,6 +143,16 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
             }
 
             for (Organization thirdOrg : thirdOrgs) {
+                // 根据三级机构的创建时间判断：如果机构是在本月或之前创建的，才显示该月份的薪酬发放
+                if (thirdOrg.getCreateTime() != null) {
+                    LocalDate orgCreateDate = thirdOrg.getCreateTime().toLocalDate();
+                    LocalDate orgCreateMonth = orgCreateDate.withDayOfMonth(1);
+                    // 如果机构创建月份晚于查询月份，跳过该机构
+                    if (orgCreateMonth.isAfter(monthDate)) {
+                        continue;
+                    }
+                }
+                
                 // 检查该机构该月份是否已有薪酬发放单
                 SalaryIssuance existing = getByThirdOrgIdAndMonth(thirdOrg.getOrgId(), monthDate);
                 // 只显示待登记和待复核状态的记录
@@ -253,12 +264,62 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
             response.setSalarySlipNumber(existing.getSalarySlipNumber());
         } else {
             // 查询该机构下正常状态的员工
+            // 根据三级机构的创建时间来判断员工筛选规则：
+            // 如果机构是在本月或之前创建的，该机构下的员工从机构创建月份开始出现在薪酬发放中
+            // 如果机构是在本月创建的，该机构下的员工从本月开始出现在薪酬发放中（不受员工登记时间限制）
+            final LocalDate orgCreateMonth;
+            if (thirdOrg.getCreateTime() != null) {
+                LocalDate orgCreateDate = thirdOrg.getCreateTime().toLocalDate();
+                orgCreateMonth = orgCreateDate.withDayOfMonth(1);
+            } else {
+                orgCreateMonth = null;
+            }
+            
+            // 如果机构创建月份早于或等于查询月份，使用机构创建月份作为筛选基准
+            // 否则不显示该机构（机构创建月份晚于查询月份）
+            final LocalDate nextMonth = monthDate.plusMonths(1);
+            final LocalDate finalMonthDate = monthDate;
+            
             List<EmployeeArchive> employees = employeeArchiveService.getByThirdOrgId(thirdOrg.getOrgId());
             employees = employees.stream()
                     .filter(e -> EmployeeArchiveStatus.NORMAL.getCode().equals(e.getStatus()))
                     .filter(e -> e.getSalaryStandardId() != null)
+                    .filter(e -> {
+                        // 根据机构创建时间判断员工筛选规则：
+                        // 1. 如果机构是在本月创建的，该机构下的员工从本月开始出现在薪酬发放中（不受员工登记时间限制）
+                        // 2. 如果机构是在之前月份创建的（早期建立的机构），使用原来的逻辑：员工登记时间必须在查询月份之前
+                        if (orgCreateMonth != null && !orgCreateMonth.isAfter(finalMonthDate)) {
+                            if (e.getRegistrationTime() != null) {
+                                LocalDate empRegDate = e.getRegistrationTime().toLocalDate();
+                                LocalDate empRegMonth = empRegDate.withDayOfMonth(1);
+                                
+                                // 如果机构创建月份等于查询月份（机构是在本月创建的）
+                                if (orgCreateMonth.equals(finalMonthDate)) {
+                                    // 员工从机构创建月份开始出现，只要登记月份不晚于查询月份的下个月即可
+                                    return !empRegMonth.isAfter(nextMonth);
+                                } else {
+                                    // 机构是在之前月份创建的（早期建立的机构），使用原来的逻辑
+                                    // 员工登记时间必须在查询月份之前（本月及以后添加的员工不应该出现在本月的薪酬发放中）
+                                    return empRegMonth.isBefore(finalMonthDate);
+                                }
+                            }
+                            return false;
+                        } else {
+                            // 机构是在查询月份之后创建的，不显示（已在前面过滤）
+                            return false;
+                        }
+                    })
+                    .filter(e -> {
+                        // 检查薪酬标准是否存在且已通过
+                        if (e.getSalaryStandardId() != null) {
+                            SalaryStandard standard = salaryStandardService.getById(e.getSalaryStandardId());
+                            return standard != null && SalaryStandardStatus.APPROVED.getCode().equals(standard.getStatus());
+                        }
+                        return false;
+                    })
                     .collect(Collectors.toList());
 
+            // 如果没有符合条件的员工，不显示该机构
             if (employees.isEmpty()) {
                 return null;
             }
@@ -268,7 +329,8 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
             for (EmployeeArchive employee : employees) {
                 if (employee.getSalaryStandardId() != null) {
                     SalaryStandard standard = salaryStandardService.getById(employee.getSalaryStandardId());
-                    if (standard != null) {
+                    // 只使用已通过的薪酬标准
+                    if (standard != null && SalaryStandardStatus.APPROVED.getCode().equals(standard.getStatus())) {
                         List<SalaryStandardItem> items = salaryStandardItemService.getByStandardId(standard.getStandardId());
                         for (SalaryStandardItem item : items) {
                             SalaryItem salaryItem = salaryItemService.getById(item.getItemId());
@@ -384,7 +446,8 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
                     issuance.getIssuanceId(),
                     employee,
                     detailRequest.getAwardAmount() != null ? detailRequest.getAwardAmount() : BigDecimal.ZERO,
-                    detailRequest.getDeductionAmount() != null ? detailRequest.getDeductionAmount() : BigDecimal.ZERO
+                    detailRequest.getDeductionAmount() != null ? detailRequest.getDeductionAmount() : BigDecimal.ZERO,
+                    issuance.getIssuanceMonth()
             );
 
             salaryIssuanceDetailService.save(detail);
@@ -484,16 +547,36 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
         }
 
         // 发放时间范围查询
+        // 如果没有指定日期范围，默认查询当前月份
+        if (startDate == null && endDate == null) {
+            LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+            LocalDate nextMonth = currentMonth.plusMonths(1);
+            wrapper.ge(SalaryIssuance::getIssuanceMonth, currentMonth)
+                   .lt(SalaryIssuance::getIssuanceMonth, nextMonth);
+        } else {
+            // 如果指定了日期范围，按指定范围查询
+            // 将日期转换为月份的第一天进行比较，确保能正确匹配
         if (startDate != null) {
-            wrapper.ge(SalaryIssuance::getIssuanceMonth, startDate);
+                LocalDate startMonth = startDate.withDayOfMonth(1);
+                wrapper.ge(SalaryIssuance::getIssuanceMonth, startMonth);
         }
         if (endDate != null) {
-            wrapper.le(SalaryIssuance::getIssuanceMonth, endDate);
+                // 将结束日期转换为月份的第一天，然后查询该月份及之前的所有记录
+                LocalDate endMonth = endDate.withDayOfMonth(1);
+                LocalDate nextMonth = endMonth.plusMonths(1);
+                wrapper.lt(SalaryIssuance::getIssuanceMonth, nextMonth);
+            }
         }
 
         // 状态查询
+        // 如果没有指定状态，默认查询已复核（EXECUTED）和待复核（PENDING_REVIEW）的记录
         if (status != null && !status.trim().isEmpty()) {
             wrapper.eq(SalaryIssuance::getStatus, status);
+        } else {
+            // 默认查询已复核和待复核的记录
+            wrapper.in(SalaryIssuance::getStatus, 
+                    SalaryIssuanceStatus.EXECUTED.getCode(),
+                    SalaryIssuanceStatus.PENDING_REVIEW.getCode());
         }
 
         // 三级机构ID查询
@@ -507,11 +590,25 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
     }
 
     @Override
-    public IPage<SalaryIssuance> getPendingReviewPage(int page, int size) {
+    public IPage<SalaryIssuance> getPendingReviewPage(String issuanceMonth, int page, int size) {
         Page<SalaryIssuance> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<SalaryIssuance> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SalaryIssuance::getStatus, SalaryIssuanceStatus.PENDING_REVIEW.getCode())
-               .orderByDesc(SalaryIssuance::getRegistrationTime);
+        wrapper.eq(SalaryIssuance::getStatus, SalaryIssuanceStatus.PENDING_REVIEW.getCode());
+        
+        // 如果指定了月份，添加月份筛选条件
+        if (issuanceMonth != null && !issuanceMonth.trim().isEmpty()) {
+            try {
+                java.time.YearMonth yearMonth = java.time.YearMonth.parse(issuanceMonth);
+                LocalDate monthDate = yearMonth.atDay(1);
+                LocalDate nextMonthDate = monthDate.plusMonths(1);
+                wrapper.ge(SalaryIssuance::getIssuanceMonth, monthDate)
+                       .lt(SalaryIssuance::getIssuanceMonth, nextMonthDate);
+            } catch (Exception e) {
+                // 如果月份格式错误，忽略该条件
+            }
+        }
+        
+        wrapper.orderByDesc(SalaryIssuance::getRegistrationTime);
         return page(pageParam, wrapper);
     }
 
@@ -519,7 +616,7 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
      * 创建薪酬发放明细
      */
     private SalaryIssuanceDetail createSalaryIssuanceDetail(Long issuanceId, EmployeeArchive employee,
-                                                            BigDecimal awardAmount, BigDecimal deductionAmount) {
+                                                            BigDecimal awardAmount, BigDecimal deductionAmount, LocalDate issuanceMonth) {
         SalaryIssuanceDetail detail = new SalaryIssuanceDetail();
         detail.setIssuanceId(issuanceId);
         detail.setEmployeeId(employee.getArchiveId());
@@ -535,49 +632,84 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
         }
 
         // 从薪酬标准获取各项目金额
+        // 只包含在发放月份之前创建的薪酬项目（本月及其以后创建的薪酬项目不应该出现在本月的薪酬发放登记里面）
+        LocalDate nextMonth = issuanceMonth != null ? issuanceMonth.plusMonths(1) : null;
+        LocalDateTime nextMonthStart = nextMonth != null ? nextMonth.atStartOfDay() : null;
+        
         if (employee.getSalaryStandardId() != null) {
             SalaryStandard standard = salaryStandardService.getById(employee.getSalaryStandardId());
-            if (standard != null) {
+            // 只使用已通过的薪酬标准
+            if (standard != null && SalaryStandardStatus.APPROVED.getCode().equals(standard.getStatus())) {
                 List<SalaryStandardItem> standardItems = salaryStandardItemService.getByStandardId(standard.getStandardId());
                 List<SalaryItem> salaryItems = salaryItemService.list();
 
                 Map<Long, SalaryItem> salaryItemMap = salaryItems.stream()
                         .collect(Collectors.toMap(SalaryItem::getItemId, item -> item));
 
+                // 用于存储动态项目（无法映射到固定字段的新项目）
+                Map<String, BigDecimal> dynamicItems = new HashMap<>();
+                
                 for (SalaryStandardItem standardItem : standardItems) {
                     SalaryItem salaryItem = salaryItemMap.get(standardItem.getItemId());
                     if (salaryItem != null) {
+                        // 如果指定了发放月份，只包含在该月份之前创建的薪酬项目
+                        if (nextMonthStart != null && salaryItem.getCreateTime() != null) {
+                            if (!salaryItem.getCreateTime().isBefore(nextMonthStart)) {
+                                // 薪酬项目是在发放月份之后创建的，跳过
+                                continue;
+                            }
+                        }
                         BigDecimal amount = standardItem.getAmount() != null ? standardItem.getAmount() : BigDecimal.ZERO;
                         String itemCode = salaryItem.getItemCode();
+                        String itemType = salaryItem.getItemType();
 
+                        // 映射到固定字段
+                        boolean mapped = false;
                         switch (itemCode) {
                             case "S001": // 基本工资
                                 detail.setBasicSalary(amount);
+                                mapped = true;
                                 break;
                             case "S002": // 绩效奖金
                                 detail.setPerformanceBonus(amount);
+                                mapped = true;
                                 break;
                             case "S003": // 交通补贴
                                 detail.setTransportationAllowance(amount);
+                                mapped = true;
                                 break;
                             case "S004": // 餐费补贴
                                 detail.setMealAllowance(amount);
+                                mapped = true;
                                 break;
                             case "S006": // 养老保险
                                 detail.setPensionInsurance(amount);
+                                mapped = true;
                                 break;
                             case "S007": // 医疗保险
                                 detail.setMedicalInsurance(amount);
+                                mapped = true;
                                 break;
                             case "S008": // 失业保险
                                 detail.setUnemploymentInsurance(amount);
+                                mapped = true;
                                 break;
                             case "S009": // 住房公积金
                                 detail.setHousingFund(amount);
+                                mapped = true;
                                 break;
+                        }
+                        
+                        // 如果无法映射到固定字段，放入动态项目Map中
+                        if (!mapped && amount.compareTo(BigDecimal.ZERO) > 0) {
+                            dynamicItems.put(itemCode, amount);
                         }
                     }
                 }
+                
+                // 将动态项目存储到detail中（通过反射或临时存储）
+                // 注意：由于SalaryIssuanceDetail实体类没有dynamicItems字段，
+                // 我们需要在转换为Response时处理
             }
         }
 
@@ -737,17 +869,36 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
         }
 
         // 如果不存在或状态不是待复核，根据薪酬标准计算明细
+        // 只包含在登记月份之前添加的员工（本月及其以后添加的员工不应该出现在本月的薪酬发放登记里面）
+        // 同时只包含在发放月份之前创建的薪酬项目
+        LocalDate nextMonth = monthDate.plusMonths(1);
+        LocalDateTime nextMonthStart = nextMonth.atStartOfDay();
+        
         List<EmployeeArchive> employees = employeeArchiveService.getByThirdOrgId(thirdOrgId);
         employees = employees.stream()
                 .filter(e -> EmployeeArchiveStatus.NORMAL.getCode().equals(e.getStatus()))
                 .filter(e -> e.getSalaryStandardId() != null)
+                .filter(e -> e.getRegistrationTime() != null && e.getRegistrationTime().isBefore(nextMonthStart))
+                .filter(e -> {
+                    // 检查薪酬标准是否存在且已通过
+                    if (e.getSalaryStandardId() != null) {
+                        SalaryStandard standard = salaryStandardService.getById(e.getSalaryStandardId());
+                        return standard != null && SalaryStandardStatus.APPROVED.getCode().equals(standard.getStatus());
+                    }
+                    return false;
+                })
                 .collect(Collectors.toList());
 
         List<com.example.common.dto.SalaryIssuanceDetailResponse> result = new ArrayList<>();
 
+        // 获取所有薪酬项目（用于动态处理新项目）
+        List<SalaryItem> allSalaryItems = salaryItemService.list();
+        Map<Long, SalaryItem> salaryItemMap = allSalaryItems.stream()
+                .collect(Collectors.toMap(SalaryItem::getItemId, item -> item));
+        
         for (EmployeeArchive employee : employees) {
             // 创建临时明细对象（不保存到数据库）
-            SalaryIssuanceDetail tempDetail = createSalaryIssuanceDetail(null, employee, BigDecimal.ZERO, BigDecimal.ZERO);
+            SalaryIssuanceDetail tempDetail = createSalaryIssuanceDetail(null, employee, BigDecimal.ZERO, BigDecimal.ZERO, monthDate);
             
             // 转换为响应对象
             SalaryIssuanceDetailResponse response = new SalaryIssuanceDetailResponse();
@@ -765,9 +916,66 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
             response.setHousingFund(tempDetail.getHousingFund());
             response.setAwardAmount(BigDecimal.ZERO);
             response.setDeductionAmount(BigDecimal.ZERO);
-            response.setTotalIncome(tempDetail.getTotalIncome());
-            response.setTotalDeduction(tempDetail.getTotalDeduction());
-            response.setNetPay(tempDetail.getNetPay());
+            
+            // 获取该员工的薪酬标准，提取所有项目（包括新项目）
+            // 只包含在发放月份之前创建的薪酬项目
+            Map<String, BigDecimal> dynamicItems = new HashMap<>();
+            BigDecimal additionalIncome = BigDecimal.ZERO;
+            BigDecimal additionalDeduction = BigDecimal.ZERO;
+            
+            if (employee.getSalaryStandardId() != null) {
+                SalaryStandard standard = salaryStandardService.getById(employee.getSalaryStandardId());
+                if (standard != null) {
+                    List<SalaryStandardItem> standardItems = salaryStandardItemService.getByStandardId(standard.getStandardId());
+                    
+                    for (SalaryStandardItem standardItem : standardItems) {
+                        SalaryItem salaryItem = salaryItemMap.get(standardItem.getItemId());
+                        if (salaryItem != null) {
+                            // 只包含在发放月份之前创建的薪酬项目
+                            if (salaryItem.getCreateTime() != null && nextMonthStart != null) {
+                                if (!salaryItem.getCreateTime().isBefore(nextMonthStart)) {
+                                    // 薪酬项目是在发放月份之后创建的，跳过
+                                    continue;
+                                }
+                            }
+                            
+                            BigDecimal amount = standardItem.getAmount() != null ? standardItem.getAmount() : BigDecimal.ZERO;
+                            String itemCode = salaryItem.getItemCode();
+                            String itemType = salaryItem.getItemType();
+                            
+                            // 检查是否映射到固定字段
+                            boolean isFixedField = "S001".equals(itemCode) || "S002".equals(itemCode) ||
+                                    "S003".equals(itemCode) || "S004".equals(itemCode) ||
+                                    "S006".equals(itemCode) || "S007".equals(itemCode) ||
+                                    "S008".equals(itemCode) || "S009".equals(itemCode);
+                            
+                            // 如果是新项目（无法映射到固定字段），放入dynamicItems
+                            if (!isFixedField && amount.compareTo(BigDecimal.ZERO) > 0) {
+                                dynamicItems.put(itemCode, amount);
+                                // 累加到总收入或总扣除中
+                                if ("INCOME".equals(itemType)) {
+                                    additionalIncome = additionalIncome.add(amount);
+                                } else if ("DEDUCTION".equals(itemType)) {
+                                    additionalDeduction = additionalDeduction.add(amount);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            response.setDynamicItems(dynamicItems);
+            
+            // 重新计算合计（包括动态项目）
+            BigDecimal totalIncome = (tempDetail.getTotalIncome() != null ? tempDetail.getTotalIncome() : BigDecimal.ZERO)
+                    .add(additionalIncome);
+            BigDecimal totalDeduction = (tempDetail.getTotalDeduction() != null ? tempDetail.getTotalDeduction() : BigDecimal.ZERO)
+                    .add(additionalDeduction);
+            BigDecimal netPay = totalIncome.subtract(totalDeduction);
+            
+            response.setTotalIncome(totalIncome.setScale(2, RoundingMode.HALF_UP));
+            response.setTotalDeduction(totalDeduction.setScale(2, RoundingMode.HALF_UP));
+            response.setNetPay(netPay.setScale(2, RoundingMode.HALF_UP));
             
             result.add(response);
         }

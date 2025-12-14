@@ -47,5 +47,13 @@ public interface OrganizationService extends IService<Organization> {
      * @return 三级机构列表
      */
     List<Organization> getThirdLevelOrgs(Long secondOrgId);
+
+    /**
+     * 获取一级机构下的所有三级机构列表（通过二级机构）
+     *
+     * @param firstOrgId 一级机构ID
+     * @return 三级机构列表
+     */
+    List<Organization> getThirdLevelOrgsByFirstOrgId(Long firstOrgId);
 }
 
