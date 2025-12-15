@@ -112,10 +112,10 @@ const SalaryIssuanceRegister = () => {
         performanceBonus: parseFloat(detail.performanceBonus) || 0,
         transportationAllowance: parseFloat(detail.transportationAllowance) || 0,
         mealAllowance: parseFloat(detail.mealAllowance) || 0,
-        pensionInsurance: parseFloat(detail.pensionInsurance) || 0,
-        medicalInsurance: parseFloat(detail.medicalInsurance) || 0,
-        unemploymentInsurance: parseFloat(detail.unemploymentInsurance) || 0,
-        housingFund: parseFloat(detail.housingFund) || 0,
+        pensionInsurance: detail.pensionInsurance != null ? parseFloat(detail.pensionInsurance) : null,
+        medicalInsurance: detail.medicalInsurance != null ? parseFloat(detail.medicalInsurance) : null,
+        unemploymentInsurance: detail.unemploymentInsurance != null ? parseFloat(detail.unemploymentInsurance) : null,
+        housingFund: detail.housingFund != null ? parseFloat(detail.housingFund) : null,
         awardAmount: parseFloat(detail.awardAmount) || 0,
         deductionAmount: parseFloat(detail.deductionAmount) || 0,
         totalIncome: parseFloat(detail.totalIncome) || 0,
@@ -160,13 +160,14 @@ const SalaryIssuanceRegister = () => {
     }
   }
 
-  // 获取保险或公积金金额（如果为空则计算）
+  // 获取保险或公积金金额（只有后端明确返回了值才显示，不自动计算）
   const getInsuranceAmount = (detail, field, itemCode) => {
     const value = detail[field]
-    if (value && parseFloat(value) > 0) {
+    // 只有后端明确返回了值（不为null且大于0）才返回，否则返回null表示不显示
+    if (value != null && parseFloat(value) > 0) {
       return parseFloat(value)
     }
-    return calculateInsuranceAmount(itemCode, detail.basicSalary)
+    return null // 返回null表示不显示，不自动计算
   }
 
   const calculateTotals = (detail) => {
@@ -190,13 +191,14 @@ const SalaryIssuanceRegister = () => {
     
     detail.totalIncome = totalIncome
 
-    // 获取保险和公积金金额（如果为空则计算）
-    const pensionInsurance = getInsuranceAmount(detail, 'pensionInsurance', 'S006')
-    const medicalInsurance = getInsuranceAmount(detail, 'medicalInsurance', 'S007')
-    const unemploymentInsurance = getInsuranceAmount(detail, 'unemploymentInsurance', 'S008')
-    const housingFund = getInsuranceAmount(detail, 'housingFund', 'S009')
+    // 获取保险和公积金金额（只有后端明确返回了值才参与计算）
+    const pensionInsurance = getInsuranceAmount(detail, 'pensionInsurance', 'S006') || 0
+    const medicalInsurance = getInsuranceAmount(detail, 'medicalInsurance', 'S007') || 0
+    const unemploymentInsurance = getInsuranceAmount(detail, 'unemploymentInsurance', 'S008') || 0
+    const housingFund = getInsuranceAmount(detail, 'housingFund', 'S009') || 0
 
     // 总扣除 = 养老保险 + 医疗保险 + 失业保险 + 住房公积金 + 应扣金额 + 动态扣除项目
+    // 注意：只有后端明确返回了值的项目才参与计算
     let totalDeduction =
       pensionInsurance +
       medicalInsurance +
@@ -385,12 +387,30 @@ const SalaryIssuanceRegister = () => {
     const nextMonthStart = issuanceMonth ? issuanceMonth.add(1, 'month').startOf('month') : null
 
     // 添加动态收入项目列（排除已映射的固定字段）
-    // 只显示在发放月份之前创建的薪酬项目
+    // 只显示在发放月份之前创建的薪酬项目，并且至少有一个员工有该项目
     const fixedIncomeCodes = ['S001', 'S002', 'S003', 'S004']
+    
+    // 收集所有员工中出现的动态收入项目代码
+    const existingIncomeItemCodes = new Set()
+    employeeDetails.forEach(detail => {
+      if (detail.dynamicItems) {
+        Object.keys(detail.dynamicItems).forEach(itemCode => {
+          const item = salaryItems.find(i => i.itemCode === itemCode)
+          if (item && item.itemType === 'INCOME' && !fixedIncomeCodes.includes(itemCode)) {
+            existingIncomeItemCodes.add(itemCode)
+          }
+        })
+      }
+    })
+    
     const dynamicIncomeColumns = salaryItems
       .filter(item => {
         // 过滤固定字段
         if (item.itemType !== 'INCOME' || fixedIncomeCodes.includes(item.itemCode)) {
+          return false
+        }
+        // 只显示至少有一个员工有的项目
+        if (!existingIncomeItemCodes.has(item.itemCode)) {
           return false
         }
         // 如果指定了发放月份，只显示在该月份之前创建的薪酬项目
@@ -420,7 +440,7 @@ const SalaryIssuanceRegister = () => {
         width: 120,
         render: (amount, record) => {
           const value = getInsuranceAmount(record, 'pensionInsurance', 'S006')
-          return value > 0 ? `¥${value.toFixed(2)}` : '-'
+          return value != null && value > 0 ? `¥${value.toFixed(2)}` : '-'
         }
       },
       {
@@ -430,7 +450,7 @@ const SalaryIssuanceRegister = () => {
         width: 120,
         render: (amount, record) => {
           const value = getInsuranceAmount(record, 'medicalInsurance', 'S007')
-          return value > 0 ? `¥${value.toFixed(2)}` : '-'
+          return value != null && value > 0 ? `¥${value.toFixed(2)}` : '-'
         }
       },
       {
@@ -440,7 +460,7 @@ const SalaryIssuanceRegister = () => {
         width: 120,
         render: (amount, record) => {
           const value = getInsuranceAmount(record, 'unemploymentInsurance', 'S008')
-          return value > 0 ? `¥${value.toFixed(2)}` : '-'
+          return value != null && value > 0 ? `¥${value.toFixed(2)}` : '-'
         }
       },
       {
@@ -450,18 +470,36 @@ const SalaryIssuanceRegister = () => {
         width: 120,
         render: (amount, record) => {
           const value = getInsuranceAmount(record, 'housingFund', 'S009')
-          return value > 0 ? `¥${value.toFixed(2)}` : '-'
+          return value != null && value > 0 ? `¥${value.toFixed(2)}` : '-'
         }
       }
     ]
 
     // 添加动态扣除项目列（排除已映射的固定字段）
-    // 只显示在发放月份之前创建的薪酬项目
+    // 只显示在发放月份之前创建的薪酬项目，并且至少有一个员工有该项目
     const fixedDeductionCodes = ['S006', 'S007', 'S008', 'S009']
+    
+    // 收集所有员工中出现的动态扣除项目代码
+    const existingDeductionItemCodes = new Set()
+    employeeDetails.forEach(detail => {
+      if (detail.dynamicItems) {
+        Object.keys(detail.dynamicItems).forEach(itemCode => {
+          const item = salaryItems.find(i => i.itemCode === itemCode)
+          if (item && item.itemType === 'DEDUCTION' && !fixedDeductionCodes.includes(itemCode)) {
+            existingDeductionItemCodes.add(itemCode)
+          }
+        })
+      }
+    })
+    
     const dynamicDeductionColumns = salaryItems
       .filter(item => {
         // 过滤固定字段
         if (item.itemType !== 'DEDUCTION' || fixedDeductionCodes.includes(item.itemCode)) {
+          return false
+        }
+        // 只显示至少有一个员工有的项目
+        if (!existingDeductionItemCodes.has(item.itemCode)) {
           return false
         }
         // 如果指定了发放月份，只显示在该月份之前创建的薪酬项目
@@ -542,13 +580,13 @@ const SalaryIssuanceRegister = () => {
   const calculateTotal = (field) => {
     return employeeDetails.reduce((sum, detail) => {
       if (field === 'pensionInsurance') {
-        return sum + getInsuranceAmount(detail, 'pensionInsurance', 'S006')
+        return sum + (getInsuranceAmount(detail, 'pensionInsurance', 'S006') || 0)
       } else if (field === 'medicalInsurance') {
-        return sum + getInsuranceAmount(detail, 'medicalInsurance', 'S007')
+        return sum + (getInsuranceAmount(detail, 'medicalInsurance', 'S007') || 0)
       } else if (field === 'unemploymentInsurance') {
-        return sum + getInsuranceAmount(detail, 'unemploymentInsurance', 'S008')
+        return sum + (getInsuranceAmount(detail, 'unemploymentInsurance', 'S008') || 0)
       } else if (field === 'housingFund') {
-        return sum + getInsuranceAmount(detail, 'housingFund', 'S009')
+        return sum + (getInsuranceAmount(detail, 'housingFund', 'S009') || 0)
       } else {
         return sum + (parseFloat(detail[field]) || 0)
       }

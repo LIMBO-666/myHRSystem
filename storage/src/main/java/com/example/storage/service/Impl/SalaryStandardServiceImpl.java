@@ -28,6 +28,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -403,19 +405,50 @@ public class SalaryStandardServiceImpl extends ServiceImpl<SalaryStandardMapper,
                 continue;
             }
 
-            // 判断是否需要自动计算（三险一金）
+            // 判断是否需要自动计算
+            // 注意：只有当用户明确标记为自动计算（isCalculated=true）时，才自动计算
+            // 如果用户没有选择包含该项目（isCalculated=false或null），则不计算
             boolean isCalculated = false;
             BigDecimal amount = itemRequest.getAmount() != null ? itemRequest.getAmount() : BigDecimal.ZERO;
 
             if (itemRequest.getIsCalculated() != null && itemRequest.getIsCalculated()) {
-                // 标记为自动计算
+                // 用户明确标记为自动计算
                 isCalculated = true;
-                amount = calculateInsuranceAmount(salaryItem.getItemCode(), basicSalary);
-            } else if (salaryItem.getCalculationRule() != null && !salaryItem.getCalculationRule().trim().isEmpty()) {
-                // 如果有计算规则且未手动指定金额，则自动计算
-                isCalculated = true;
-                amount = calculateInsuranceAmount(salaryItem.getItemCode(), basicSalary);
+                // 根据计算规则计算金额
+                if (salaryItem.getCalculationRule() != null && !salaryItem.getCalculationRule().trim().isEmpty()) {
+                    // 使用通用的计算规则计算方法
+                    Map<String, BigDecimal> allItemAmounts = new HashMap<>();
+                    // 收集所有项目的金额用于计算规则
+                    for (SalaryStandardItemRequest req : items) {
+                        SalaryItem si = salaryItemService.getById(req.getItemId());
+                        if (si != null) {
+                            BigDecimal amt = req.getAmount() != null ? req.getAmount() : BigDecimal.ZERO;
+                            allItemAmounts.put(si.getItemCode(), amt);
+                        }
+                    }
+                    // 如果基本工资还没有设置，使用传入的basicSalary
+                    if (!allItemAmounts.containsKey("S001") && basicSalary != null) {
+                        allItemAmounts.put("S001", basicSalary);
+                    }
+                    
+                    // 使用计算规则计算金额（这里简化处理，对于三险一金使用原有方法）
+                    if ("S006".equals(salaryItem.getItemCode()) || "S007".equals(salaryItem.getItemCode()) ||
+                        "S008".equals(salaryItem.getItemCode()) || "S009".equals(salaryItem.getItemCode())) {
+                        amount = calculateInsuranceAmount(salaryItem.getItemCode(), basicSalary);
+                    } else {
+                        // 对于其他有计算规则的项目，暂时使用传入的金额
+                        // 如果金额为0，可以根据计算规则计算（需要实现通用计算方法）
+                        if (amount.compareTo(BigDecimal.ZERO) == 0 && basicSalary != null) {
+                            // 这里可以调用通用的计算规则方法，但为了简化，先使用传入的金额
+                            // 实际计算会在薪酬发放时进行
+                        }
+                    }
+                } else {
+                    // 没有计算规则，使用三险一金的计算方法
+                    amount = calculateInsuranceAmount(salaryItem.getItemCode(), basicSalary);
+                }
             }
+            // 如果isCalculated为false或null，使用用户手动输入的金额，不自动计算
 
             standardItem.setAmount(amount.setScale(2, RoundingMode.HALF_UP));
             standardItem.setIsCalculated(isCalculated);

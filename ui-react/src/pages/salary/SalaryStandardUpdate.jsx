@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Form, Input, Select, Button, Table, message, Card, Space } from 'antd'
+import { Form, Input, Select, Button, Table, message, Card, Space, Checkbox } from 'antd'
 import { PlusOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import { salaryStandardService } from '../../services/salaryStandardService'
 import { salaryItemService } from '../../services/salaryItemService'
@@ -72,7 +72,7 @@ const SalaryStandardUpdate = () => {
   }
 
   const handleAddItem = () => {
-    setItems([...items, { itemId: null, amount: 0, isCalculated: false }])
+    setItems([...items, { itemId: null, amount: 0, isCalculated: false, included: false }])
   }
 
   const handleRemoveItem = (index) => {
@@ -83,13 +83,28 @@ const SalaryStandardUpdate = () => {
   const handleSubmit = async (values) => {
     setLoading(true)
     try {
-      const submitData = {
-        standardName: values.standardName,
-        items: items.map(item => ({
+      // 只提交有效的项目（itemId不为空，且金额大于0或标记为自动计算）
+      const validItems = items
+        .filter(item => item.itemId != null) // 过滤掉未选择项目的行
+        .filter(item => {
+          // 对于有计算规则的项目，如果isCalculated为true，则包含
+          const salaryItem = salaryItems.find(si => si.itemId === item.itemId)
+          if (salaryItem && salaryItem.calculationRule && salaryItem.calculationRule.trim() !== '') {
+            // 有计算规则的项目，只有isCalculated为true时才包含
+            return item.isCalculated === true
+          }
+          // 没有计算规则的项目，金额大于0时才包含
+          return (item.amount || 0) > 0
+        })
+        .map(item => ({
           itemId: item.itemId,
           amount: item.amount || 0,
           isCalculated: item.isCalculated || false
         }))
+      
+      const submitData = {
+        standardName: values.standardName,
+        items: validItems
       }
       
       const response = await salaryStandardService.update(standardId, submitData)
@@ -107,44 +122,108 @@ const SalaryStandardUpdate = () => {
     }
   }
 
+  // 判断项目是否有计算规则
+  const isAutoCalculated = (itemId) => {
+    const salaryItem = salaryItems.find(si => si.itemId === itemId)
+    return salaryItem && salaryItem.calculationRule && salaryItem.calculationRule.trim() !== ''
+  }
+
   const itemColumns = [
     {
       title: '薪酬项目',
       dataIndex: 'itemId',
       key: 'itemId',
-      render: (itemId, record, index) => (
-        <Select
-          style={{ width: '100%' }}
-          value={itemId}
-          onChange={(value) => {
-            const newItems = [...items]
-            newItems[index].itemId = value
-            setItems(newItems)
-          }}
-        >
-          {salaryItems.map(item => (
-            <Select.Option key={item.itemId} value={item.itemId}>
-              {item.itemName}
-            </Select.Option>
-          ))}
-        </Select>
-      )
+      render: (itemId, record, index) => {
+        const salaryItem = salaryItems.find(si => si.itemId === itemId)
+        const hasCalculationRule = salaryItem && salaryItem.calculationRule && salaryItem.calculationRule.trim() !== ''
+        return (
+          <div>
+            <Select
+              style={{ width: '100%' }}
+              value={itemId}
+              onChange={(value) => {
+                const newItems = [...items]
+                const selectedSalaryItem = salaryItems.find(si => si.itemId === value)
+                newItems[index].itemId = value
+                // 如果新选择的项目有计算规则，默认包含
+                if (selectedSalaryItem && selectedSalaryItem.calculationRule && selectedSalaryItem.calculationRule.trim() !== '') {
+                  newItems[index].included = true
+                  newItems[index].isCalculated = true
+                } else {
+                  newItems[index].included = false
+                  newItems[index].isCalculated = false
+                }
+                setItems(newItems)
+              }}
+            >
+              {salaryItems.map(item => (
+                <Select.Option key={item.itemId} value={item.itemId}>
+                  {item.itemName}
+                  {item.calculationRule && (
+                    <span style={{ color: '#999', fontSize: '12px', marginLeft: 8 }}>
+                      (自动计算)
+                    </span>
+                  )}
+                </Select.Option>
+              ))}
+            </Select>
+            {hasCalculationRule && (
+              <div style={{ fontSize: '12px', color: '#999', marginTop: 4 }}>
+                计算规则: {salaryItem.calculationRule}
+              </div>
+            )}
+          </div>
+        )
+      }
     },
     {
       title: '金额',
       dataIndex: 'amount',
       key: 'amount',
-      render: (amount, _, index) => (
-        <Input
-          type="number"
-          value={amount}
-          onChange={(e) => {
-            const newItems = [...items]
-            newItems[index].amount = parseFloat(e.target.value) || 0
-            setItems(newItems)
-          }}
-        />
-      )
+      render: (amount, record, index) => {
+        const hasCalculationRule = isAutoCalculated(record.itemId)
+        return (
+          <Input
+            type="number"
+            value={amount}
+            disabled={hasCalculationRule && record.isCalculated}
+            onChange={(e) => {
+              const newItems = [...items]
+              newItems[index].amount = parseFloat(e.target.value) || 0
+              setItems(newItems)
+            }}
+          />
+        )
+      }
+    },
+    {
+      title: '包含',
+      key: 'included',
+      width: 100,
+      render: (_, record, index) => {
+        const hasCalculationRule = isAutoCalculated(record.itemId)
+        if (!hasCalculationRule) {
+          // 没有计算规则的项目，根据金额判断是否包含
+          return (record.amount || 0) > 0 ? '是' : '否'
+        }
+        // 有计算规则的项目，显示复选框
+        return (
+          <Checkbox
+            checked={record.included !== false}
+            onChange={(e) => {
+              const newItems = [...items]
+              newItems[index].included = e.target.checked
+              newItems[index].isCalculated = e.target.checked
+              if (!e.target.checked) {
+                newItems[index].amount = 0
+              }
+              setItems(newItems)
+            }}
+          >
+            包含
+          </Checkbox>
+        )
+      }
     },
     {
       title: '操作',

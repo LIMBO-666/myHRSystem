@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Form, Input, Select, Button, InputNumber, message, Card, Row, Col, Space } from 'antd'
+import { Form, Input, Select, Button, InputNumber, message, Card, Row, Col, Space, Checkbox } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { salaryStandardService } from '../../services/salaryStandardService'
 import { positionService } from '../../services/positionService'
@@ -16,6 +16,7 @@ const SalaryStandardRegister = () => {
   const [users, setUsers] = useState([])
   const [standardCode, setStandardCode] = useState('') // 薪酬标准编号（系统生成）
   const [registrationTime, setRegistrationTime] = useState(dayjs().format('YYYY-MM-DD HH:mm')) // 登记时间
+  const [includedItems, setIncludedItems] = useState({}) // 记录哪些有计算规则的项目被包含
 
   useEffect(() => {
     loadPositions()
@@ -262,25 +263,35 @@ const SalaryStandardRegister = () => {
   const handleSubmit = async (values) => {
     setLoading(true)
     try {
-      // 构建薪酬项目明细列表（提交所有项目，包括金额为0的）
-      const items = salaryItems.map(item => {
-        let amount = values[`item_${item.itemId}`] || 0
-        
-        // 如果有计算规则，重新计算一次确保准确性
-        if (isAutoCalculated(item)) {
-          const calculatedAmount = calculateByRule(item, values)
-          if (calculatedAmount !== null) {
-            amount = calculatedAmount
+      // 构建薪酬项目明细列表
+      // 对于有计算规则的项目，只有用户选择"包含此项目"时才提交
+      const items = salaryItems
+        .filter(item => {
+          // 如果有计算规则，检查用户是否选择包含此项目
+          if (isAutoCalculated(item)) {
+            return includedItems[item.itemId] !== false // 默认包含，除非明确取消
           }
-        }
-        
-        return {
-          itemId: item.itemId,
-          amount: parseFloat(amount).toFixed(2),
-          isCalculated: isAutoCalculated(item)
-        }
-      })
-      // 移除过滤：提交所有项目，包括金额为0的，这样详情中可以看到所有项目
+          // 没有计算规则的项目，如果金额大于0就包含
+          const amount = values[`item_${item.itemId}`] || 0
+          return parseFloat(amount) > 0
+        })
+        .map(item => {
+          let amount = values[`item_${item.itemId}`] || 0
+          
+          // 如果有计算规则，重新计算一次确保准确性
+          if (isAutoCalculated(item)) {
+            const calculatedAmount = calculateByRule(item, values)
+            if (calculatedAmount !== null) {
+              amount = calculatedAmount
+            }
+          }
+          
+          return {
+            itemId: item.itemId,
+            amount: parseFloat(amount).toFixed(2),
+            isCalculated: isAutoCalculated(item)
+          }
+        })
 
       const submitData = {
         standardName: values.standardName,
@@ -317,6 +328,7 @@ const SalaryStandardRegister = () => {
 
   const handleReset = () => {
     form.resetFields()
+    setIncludedItems({}) // 重置包含项目状态
     setStandardCode('')
     setRegistrationTime(dayjs().format('YYYY-MM-DD HH:mm'))
     if (user?.userId) {
@@ -486,9 +498,30 @@ const SalaryStandardRegister = () => {
                   />
                 </Form.Item>
                 {isAutoCalc && (
-                  <div style={{ fontSize: '12px', color: '#999', marginTop: -16, marginBottom: 8 }}>
-                    {formatCalculationRule()}
-                  </div>
+                  <>
+                    <div style={{ fontSize: '12px', color: '#999', marginTop: -16, marginBottom: 4 }}>
+                      {formatCalculationRule()}
+                    </div>
+                    <Checkbox
+                      checked={includedItems[item.itemId] !== false}
+                      onChange={(e) => {
+                        setIncludedItems({
+                          ...includedItems,
+                          [item.itemId]: e.target.checked
+                        })
+                        // 如果取消选择，将金额设为0
+                        if (!e.target.checked) {
+                          form.setFieldsValue({ [fieldName]: 0 })
+                        } else {
+                          // 如果选择，重新计算金额
+                          handleItemChange(item.itemCode)
+                        }
+                      }}
+                      style={{ fontSize: '12px', marginBottom: 8 }}
+                    >
+                      包含此项目
+                    </Checkbox>
+                  </>
                 )}
               </Col>
             )

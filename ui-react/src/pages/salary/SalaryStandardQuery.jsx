@@ -431,59 +431,70 @@ const SalaryStandardQuery = () => {
       if (detailResponse.code === 200) {
         const detail = detailResponse.data
         
-        // 合并所有薪酬项目，确保显示所有项目（包括未填写的）
-        const allItemsMap = new Map()
+        // 只显示在标准中实际包含的项目
+        // 对于有计算规则的项目，只有isCalculated为true时才包含
+        // 对于没有计算规则的项目，只有金额大于0时才包含
+        let mergedItems = []
         
-        // 先添加所有薪酬项目
-        salaryItems.forEach(item => {
-          allItemsMap.set(item.itemId, {
-            itemId: item.itemId,
-            itemCode: item.itemCode,
-            itemName: item.itemName,
-            itemType: item.itemType,
-            calculationRule: item.calculationRule,
-            amount: null, // 默认没有金额
-            isCalculated: false
-          })
-        })
-        
-        // 然后用标准中的项目覆盖（如果有）
         if (detail.items && detail.items.length > 0) {
-          detail.items.forEach(standardItem => {
-            if (allItemsMap.has(standardItem.itemId)) {
-              allItemsMap.set(standardItem.itemId, {
-                ...allItemsMap.get(standardItem.itemId),
+          // 过滤出有效的项目
+          mergedItems = detail.items
+            .filter(standardItem => {
+              const salaryItem = salaryItems.find(si => si.itemId === standardItem.itemId)
+              if (!salaryItem) return false
+              
+              // 如果有计算规则，只有isCalculated为true时才包含
+              if (salaryItem.calculationRule && salaryItem.calculationRule.trim() !== '') {
+                return standardItem.isCalculated === true
+              }
+              // 没有计算规则的项目，金额大于0时才包含
+              return (standardItem.amount || 0) > 0
+            })
+            .map(standardItem => {
+              const salaryItem = salaryItems.find(si => si.itemId === standardItem.itemId)
+              return {
+                itemId: standardItem.itemId,
+                itemCode: salaryItem.itemCode,
+                itemName: salaryItem.itemName,
+                itemType: salaryItem.itemType,
+                calculationRule: salaryItem.calculationRule,
                 amount: standardItem.amount,
                 isCalculated: standardItem.isCalculated || false
-              })
-            }
-          })
-        }
-        
-        // 转换为数组并按排序顺序排序
-        let mergedItems = Array.from(allItemsMap.values())
-          .sort((a, b) => {
+              }
+            })
+          
+          // 按排序顺序排序
+          mergedItems = mergedItems.sort((a, b) => {
             const itemA = salaryItems.find(i => i.itemId === a.itemId)
             const itemB = salaryItems.find(i => i.itemId === b.itemId)
             const sortA = itemA ? (itemA.sortOrder || 0) : 0
             const sortB = itemB ? (itemB.sortOrder || 0) : 0
             return sortA - sortB
           })
-        
-        // 重新计算有计算规则的项目
-        mergedItems = mergedItems.map(item => {
-          if (isAutoCalculated(item)) {
-            const calculatedAmount = calculateByRule(item, allItemsMap)
-            if (calculatedAmount !== null) {
-              return {
-                ...item,
-                amount: calculatedAmount,
-                isCalculated: true
+          
+          // 重新计算有计算规则的项目（只计算那些已经在标准中设置的项目）
+          // 创建Map用于计算规则，key为itemId，value为包含amount的对象
+          const allItemAmountsMap = new Map()
+          mergedItems.forEach(mergedItem => {
+            allItemAmountsMap.set(mergedItem.itemId, {
+              amount: mergedItem.amount || 0
+            })
+          })
+          
+          mergedItems = mergedItems.map(item => {
+            if (isAutoCalculated(item) && item.isCalculated) {
+              const calculatedAmount = calculateByRule(item, allItemAmountsMap)
+              if (calculatedAmount !== null) {
+                return {
+                  ...item,
+                  amount: calculatedAmount,
+                  isCalculated: true
+                }
               }
             }
-          }
-          return item
-        })
+            return item
+          })
+        }
         
         setCurrentRecord({
           ...detail,

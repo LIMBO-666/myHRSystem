@@ -249,6 +249,77 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
     }
 
     /**
+     * 根据机构和月份筛选符合条件的员工
+     * 统一的筛选逻辑，确保总人数和明细列表一致
+     */
+    private List<EmployeeArchive> filterEmployeesForIssuance(Organization thirdOrg, LocalDate monthDate) {
+        final LocalDate orgCreateMonth;
+        if (thirdOrg.getCreateTime() != null) {
+            LocalDate orgCreateDate = thirdOrg.getCreateTime().toLocalDate();
+            orgCreateMonth = orgCreateDate.withDayOfMonth(1);
+        } else {
+            orgCreateMonth = null;
+        }
+        
+        final LocalDate nextMonth = monthDate.plusMonths(1);
+        final LocalDate finalMonthDate = monthDate;
+        
+        List<EmployeeArchive> employees = employeeArchiveService.getByThirdOrgId(thirdOrg.getOrgId());
+        return employees.stream()
+                .filter(e -> EmployeeArchiveStatus.NORMAL.getCode().equals(e.getStatus()))
+                .filter(e -> e.getSalaryStandardId() != null)
+                .filter(e -> {
+                    // 根据机构创建时间判断员工筛选规则：
+                    // 1. 如果机构是在本月创建的，该机构下的员工从本月开始出现在薪酬发放中
+                    //    但员工登记月份必须早于或等于查询月份（不能晚于查询月份）
+                    // 2. 如果机构是在之前月份创建的（早期建立的机构），员工登记月份必须严格早于查询月份
+                    if (orgCreateMonth != null && !orgCreateMonth.isAfter(finalMonthDate)) {
+                        if (e.getRegistrationTime() != null) {
+                            LocalDate empRegDate = e.getRegistrationTime().toLocalDate();
+                            LocalDate empRegMonth = empRegDate.withDayOfMonth(1);
+                            
+                            // 如果机构创建月份等于查询月份（机构是在本月创建的）
+                            if (orgCreateMonth.equals(finalMonthDate)) {
+                                // 员工从机构创建月份开始出现，但登记月份不能晚于查询月份
+                                // 例如：查询2025-11月，只有2025-11月及之前登记的员工才应该出现
+                                // 2025-12月登记的员工不应该出现在2025-11月的薪酬发放中
+                                return !empRegMonth.isAfter(finalMonthDate);
+                            } else {
+                                // 机构是在之前月份创建的（早期建立的机构）
+                                // 员工登记月份必须严格早于查询月份（不能等于）
+                                // 例如：查询2025-11月，只有2025-10月及之前登记的员工才应该出现
+                                // 2025-11月登记的员工不应该出现在2025-11月的薪酬发放中
+                                return empRegMonth.isBefore(finalMonthDate);
+                            }
+                        }
+                        return false;
+                    } else {
+                        // 机构是在查询月份之后创建的，不显示（已在前面过滤）
+                        return false;
+                    }
+                })
+                .filter(e -> {
+                    // 检查薪酬标准是否存在且已通过，并且创建时间早于或等于查询月份
+                    if (e.getSalaryStandardId() != null) {
+                        SalaryStandard standard = salaryStandardService.getById(e.getSalaryStandardId());
+                        if (standard != null && SalaryStandardStatus.APPROVED.getCode().equals(standard.getStatus())) {
+                            // 检查薪酬标准的创建时间：必须早于或等于查询月份的第一天
+                            if (standard.getCreateTime() != null) {
+                                LocalDate standardCreateDate = standard.getCreateTime().toLocalDate();
+                                LocalDate standardCreateMonth = standardCreateDate.withDayOfMonth(1);
+                                // 薪酬标准创建月份必须早于或等于查询月份
+                                return !standardCreateMonth.isAfter(finalMonthDate);
+                            }
+                            // 如果没有创建时间，默认允许（兼容旧数据）
+                            return true;
+                        }
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 构建待登记响应对象
      */
     private PendingRegistrationResponse buildPendingRegistrationResponse(Organization thirdOrg, SalaryIssuance existing, LocalDate monthDate) {
@@ -263,61 +334,8 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
             response.setStatus(existing.getStatus());
             response.setSalarySlipNumber(existing.getSalarySlipNumber());
         } else {
-            // 查询该机构下正常状态的员工
-            // 根据三级机构的创建时间来判断员工筛选规则：
-            // 如果机构是在本月或之前创建的，该机构下的员工从机构创建月份开始出现在薪酬发放中
-            // 如果机构是在本月创建的，该机构下的员工从本月开始出现在薪酬发放中（不受员工登记时间限制）
-            final LocalDate orgCreateMonth;
-            if (thirdOrg.getCreateTime() != null) {
-                LocalDate orgCreateDate = thirdOrg.getCreateTime().toLocalDate();
-                orgCreateMonth = orgCreateDate.withDayOfMonth(1);
-            } else {
-                orgCreateMonth = null;
-            }
-            
-            // 如果机构创建月份早于或等于查询月份，使用机构创建月份作为筛选基准
-            // 否则不显示该机构（机构创建月份晚于查询月份）
-            final LocalDate nextMonth = monthDate.plusMonths(1);
-            final LocalDate finalMonthDate = monthDate;
-            
-            List<EmployeeArchive> employees = employeeArchiveService.getByThirdOrgId(thirdOrg.getOrgId());
-            employees = employees.stream()
-                    .filter(e -> EmployeeArchiveStatus.NORMAL.getCode().equals(e.getStatus()))
-                    .filter(e -> e.getSalaryStandardId() != null)
-                    .filter(e -> {
-                        // 根据机构创建时间判断员工筛选规则：
-                        // 1. 如果机构是在本月创建的，该机构下的员工从本月开始出现在薪酬发放中（不受员工登记时间限制）
-                        // 2. 如果机构是在之前月份创建的（早期建立的机构），使用原来的逻辑：员工登记时间必须在查询月份之前
-                        if (orgCreateMonth != null && !orgCreateMonth.isAfter(finalMonthDate)) {
-                            if (e.getRegistrationTime() != null) {
-                                LocalDate empRegDate = e.getRegistrationTime().toLocalDate();
-                                LocalDate empRegMonth = empRegDate.withDayOfMonth(1);
-                                
-                                // 如果机构创建月份等于查询月份（机构是在本月创建的）
-                                if (orgCreateMonth.equals(finalMonthDate)) {
-                                    // 员工从机构创建月份开始出现，只要登记月份不晚于查询月份的下个月即可
-                                    return !empRegMonth.isAfter(nextMonth);
-                                } else {
-                                    // 机构是在之前月份创建的（早期建立的机构），使用原来的逻辑
-                                    // 员工登记时间必须在查询月份之前（本月及以后添加的员工不应该出现在本月的薪酬发放中）
-                                    return empRegMonth.isBefore(finalMonthDate);
-                                }
-                            }
-                            return false;
-                        } else {
-                            // 机构是在查询月份之后创建的，不显示（已在前面过滤）
-                            return false;
-                        }
-                    })
-                    .filter(e -> {
-                        // 检查薪酬标准是否存在且已通过
-                        if (e.getSalaryStandardId() != null) {
-                            SalaryStandard standard = salaryStandardService.getById(e.getSalaryStandardId());
-                            return standard != null && SalaryStandardStatus.APPROVED.getCode().equals(standard.getStatus());
-                        }
-                        return false;
-                    })
-                    .collect(Collectors.toList());
+            // 使用统一的筛选方法获取符合条件的员工
+            List<EmployeeArchive> employees = filterEmployeesForIssuance(thirdOrg, monthDate);
 
             // 如果没有符合条件的员工，不显示该机构
             if (employees.isEmpty()) {
@@ -622,6 +640,15 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
         detail.setEmployeeId(employee.getArchiveId());
         detail.setEmployeeNumber(employee.getArchiveNumber());
         detail.setEmployeeName(employee.getName());
+        // 初始化固定字段为null，只有明确包含的项目才会被设置
+        detail.setBasicSalary(null);
+        detail.setPerformanceBonus(null);
+        detail.setTransportationAllowance(null);
+        detail.setMealAllowance(null);
+        detail.setPensionInsurance(null);
+        detail.setMedicalInsurance(null);
+        detail.setUnemploymentInsurance(null);
+        detail.setHousingFund(null);
 
         // 设置职位名称
         if (employee.getPositionId() != null) {
@@ -638,17 +665,40 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
         
         if (employee.getSalaryStandardId() != null) {
             SalaryStandard standard = salaryStandardService.getById(employee.getSalaryStandardId());
-            // 只使用已通过的薪酬标准
+            // 只使用已通过的薪酬标准，并且创建时间早于或等于发放月份
+            if (standard != null && SalaryStandardStatus.APPROVED.getCode().equals(standard.getStatus())) {
+                // 检查薪酬标准的创建时间：必须早于或等于发放月份的第一天
+                if (issuanceMonth != null && standard.getCreateTime() != null) {
+                    LocalDate standardCreateDate = standard.getCreateTime().toLocalDate();
+                    LocalDate standardCreateMonth = standardCreateDate.withDayOfMonth(1);
+                    LocalDate issuanceMonthFirstDay = issuanceMonth.withDayOfMonth(1);
+                    // 如果薪酬标准创建月份晚于发放月份，不使用该标准
+                    if (standardCreateMonth.isAfter(issuanceMonthFirstDay)) {
+                        // 薪酬标准是在发放月份之后创建的，不使用
+                        standard = null;
+                    }
+                }
+            }
             if (standard != null && SalaryStandardStatus.APPROVED.getCode().equals(standard.getStatus())) {
                 List<SalaryStandardItem> standardItems = salaryStandardItemService.getByStandardId(standard.getStandardId());
                 List<SalaryItem> salaryItems = salaryItemService.list();
 
                 Map<Long, SalaryItem> salaryItemMap = salaryItems.stream()
                         .collect(Collectors.toMap(SalaryItem::getItemId, item -> item));
+                
+                // 用于存储项目代码到项目的映射（用于计算规则解析）
+                Map<String, SalaryItem> salaryItemByCodeMap = salaryItems.stream()
+                        .collect(Collectors.toMap(SalaryItem::getItemCode, item -> item, (v1, v2) -> v1));
+                Map<String, SalaryItem> salaryItemByNameMap = salaryItems.stream()
+                        .collect(Collectors.toMap(SalaryItem::getItemName, item -> item, (v1, v2) -> v1));
 
                 // 用于存储动态项目（无法映射到固定字段的新项目）
                 Map<String, BigDecimal> dynamicItems = new HashMap<>();
                 
+                // 用于存储所有项目的金额（包括固定字段），用于计算规则计算
+                Map<String, BigDecimal> allItemAmounts = new HashMap<>();
+                
+                // 第一遍遍历：收集所有项目的金额（只处理应该包含的项目）
                 for (SalaryStandardItem standardItem : standardItems) {
                     SalaryItem salaryItem = salaryItemMap.get(standardItem.getItemId());
                     if (salaryItem != null) {
@@ -659,9 +709,86 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
                                 continue;
                             }
                         }
+                        
+                        // 检查项目是否应该被包含：
+                        // 1. 对于有计算规则的项目，只有isCalculated为true时才包含
+                        // 2. 对于没有计算规则的项目，只有金额大于0时才包含
+                        boolean hasCalculationRule = salaryItem.getCalculationRule() != null 
+                                && !salaryItem.getCalculationRule().trim().isEmpty();
+                        boolean shouldInclude = false;
+                        
+                        if (hasCalculationRule) {
+                            // 有计算规则的项目，只有isCalculated为true时才包含
+                            shouldInclude = Boolean.TRUE.equals(standardItem.getIsCalculated());
+                        } else {
+                            // 没有计算规则的项目，金额大于0时才包含
+                            BigDecimal amount = standardItem.getAmount() != null ? standardItem.getAmount() : BigDecimal.ZERO;
+                            shouldInclude = amount.compareTo(BigDecimal.ZERO) > 0;
+                        }
+                        
+                        if (!shouldInclude) {
+                            continue;
+                        }
+                        
                         BigDecimal amount = standardItem.getAmount() != null ? standardItem.getAmount() : BigDecimal.ZERO;
                         String itemCode = salaryItem.getItemCode();
+                        
+                        // 存储到allItemAmounts中，供后续计算规则使用
+                        allItemAmounts.put(itemCode, amount);
+                    }
+                }
+                
+                // 第二遍遍历：处理项目并应用计算规则（只处理应该包含的项目）
+                for (SalaryStandardItem standardItem : standardItems) {
+                    SalaryItem salaryItem = salaryItemMap.get(standardItem.getItemId());
+                    if (salaryItem != null) {
+                        // 如果指定了发放月份，只包含在该月份之前创建的薪酬项目
+                        if (nextMonthStart != null && salaryItem.getCreateTime() != null) {
+                            if (!salaryItem.getCreateTime().isBefore(nextMonthStart)) {
+                                // 薪酬项目是在发放月份之后创建的，跳过
+                                continue;
+                            }
+                        }
+                        
+                        // 检查项目是否应该被包含：
+                        // 1. 对于有计算规则的项目，只有isCalculated为true时才包含
+                        // 2. 对于没有计算规则的项目，只有金额大于0时才包含
+                        boolean itemHasCalculationRule = salaryItem.getCalculationRule() != null 
+                                && !salaryItem.getCalculationRule().trim().isEmpty();
+                        boolean shouldInclude = false;
+                        
+                        if (itemHasCalculationRule) {
+                            // 有计算规则的项目，只有isCalculated为true时才包含
+                            shouldInclude = Boolean.TRUE.equals(standardItem.getIsCalculated());
+                        } else {
+                            // 没有计算规则的项目，金额大于0时才包含
+                            BigDecimal amount = standardItem.getAmount() != null ? standardItem.getAmount() : BigDecimal.ZERO;
+                            shouldInclude = amount.compareTo(BigDecimal.ZERO) > 0;
+                        }
+                        
+                        if (!shouldInclude) {
+                            continue;
+                        }
+                        
+                        String itemCode = salaryItem.getItemCode();
                         String itemType = salaryItem.getItemType();
+                        BigDecimal amount = allItemAmounts.getOrDefault(itemCode, BigDecimal.ZERO);
+                        
+                        // 如果项目标记为自动计算且有计算规则，根据计算规则重新计算金额
+                        if (Boolean.TRUE.equals(standardItem.getIsCalculated()) 
+                                && salaryItem.getCalculationRule() != null 
+                                && !salaryItem.getCalculationRule().trim().isEmpty()) {
+                            BigDecimal calculatedAmount = calculateAmountByRule(
+                                    salaryItem.getCalculationRule(), 
+                                    allItemAmounts, 
+                                    salaryItemByCodeMap, 
+                                    salaryItemByNameMap);
+                            if (calculatedAmount != null) {
+                                amount = calculatedAmount;
+                                // 更新allItemAmounts，以便后续计算规则可以使用这个值
+                                allItemAmounts.put(itemCode, amount);
+                            }
+                        }
 
                         // 映射到固定字段
                         boolean mapped = false;
@@ -701,8 +828,22 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
                         }
                         
                         // 如果无法映射到固定字段，放入动态项目Map中
-                        if (!mapped && amount.compareTo(BigDecimal.ZERO) > 0) {
-                            dynamicItems.put(itemCode, amount);
+                        // 注意：只有用户明确选择包含的项目才会放入dynamicItems
+                        if (!mapped) {
+                            // 对于有计算规则的项目，只有isCalculated为true时才放入
+                            // 对于没有计算规则的项目，只有金额大于0时才放入
+                            boolean shouldAddToDynamic = false;
+                            if (itemHasCalculationRule) {
+                                // 有计算规则的项目，只有isCalculated为true时才放入
+                                shouldAddToDynamic = Boolean.TRUE.equals(standardItem.getIsCalculated());
+                            } else {
+                                // 没有计算规则的项目，金额大于0时才放入
+                                shouldAddToDynamic = amount.compareTo(BigDecimal.ZERO) > 0;
+                            }
+                            
+                            if (shouldAddToDynamic) {
+                                dynamicItems.put(itemCode, amount);
+                            }
                         }
                     }
                 }
@@ -721,6 +862,136 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
         recalculateDetail(detail);
 
         return detail;
+    }
+
+    /**
+     * 根据计算规则计算金额
+     * 支持格式：S001*8% 或 基本工资*8% 或 基本工资*2%+3 或 S001*30（乘除运算统一按百分比处理）
+     * 注意：对于乘除运算（*和/），无论是否有百分号，都按百分比处理，以保持与前端一致
+     */
+    private BigDecimal calculateAmountByRule(String calculationRule, 
+                                            Map<String, BigDecimal> allItemAmounts,
+                                            Map<String, SalaryItem> salaryItemByCodeMap,
+                                            Map<String, SalaryItem> salaryItemByNameMap) {
+        if (calculationRule == null || calculationRule.trim().isEmpty()) {
+            return null;
+        }
+        
+        String rule = calculationRule.trim();
+        
+        // 先尝试匹配复合运算：基本工资*2%+3
+        java.util.regex.Pattern compoundPattern = java.util.regex.Pattern.compile("(.+?)([*/])(\\d+(?:\\.\\d+)?)%([+\\-])(\\d+(?:\\.\\d+)?)");
+        java.util.regex.Matcher compoundMatcher = compoundPattern.matcher(rule);
+        
+        if (compoundMatcher.matches()) {
+            String baseItemIdentifier = compoundMatcher.group(1).trim();
+            String firstOperator = compoundMatcher.group(2); // * 或 /
+            double firstValue = Double.parseDouble(compoundMatcher.group(3));
+            String secondOperator = compoundMatcher.group(4); // + 或 -
+            double secondValue = Double.parseDouble(compoundMatcher.group(5));
+            
+            // 查找基础项目代码
+            String baseItemCode = findItemCode(baseItemIdentifier, salaryItemByCodeMap, salaryItemByNameMap);
+            if (baseItemCode == null) {
+                return null;
+            }
+            
+            BigDecimal baseAmount = allItemAmounts.get(baseItemCode);
+            if (baseAmount == null) {
+                return BigDecimal.ZERO;
+            }
+            // 即使基础金额为0，也应该进行计算（计算结果可能为0，但这是有效的）
+            
+            BigDecimal result;
+            // 先计算第一部分：base * value / 100 或 base / value / 100
+            if ("*".equals(firstOperator)) {
+                result = baseAmount.multiply(BigDecimal.valueOf(firstValue / 100));
+            } else if ("/".equals(firstOperator)) {
+                result = baseAmount.divide(BigDecimal.valueOf(firstValue / 100), 2, RoundingMode.HALF_UP);
+            } else {
+                return null;
+            }
+            
+            // 然后计算第二部分：result + secondValue 或 result - secondValue
+            if ("+".equals(secondOperator)) {
+                result = result.add(BigDecimal.valueOf(secondValue));
+            } else if ("-".equals(secondOperator)) {
+                result = result.subtract(BigDecimal.valueOf(secondValue));
+            } else {
+                return null;
+            }
+            
+            return result.setScale(2, RoundingMode.HALF_UP);
+        }
+        
+        // 匹配简单运算：项目代码/名称+运算符+数字（可能带%）
+        java.util.regex.Pattern simplePattern = java.util.regex.Pattern.compile("(.+?)([+\\-*/])(\\d+(?:\\.\\d+)?)(%?)");
+        java.util.regex.Matcher simpleMatcher = simplePattern.matcher(rule);
+        
+        if (simpleMatcher.matches()) {
+            String baseItemIdentifier = simpleMatcher.group(1).trim();
+            String operator = simpleMatcher.group(2);
+            double value = Double.parseDouble(simpleMatcher.group(3));
+            String isPercent = simpleMatcher.group(4);
+            
+            // 查找基础项目代码
+            String baseItemCode = findItemCode(baseItemIdentifier, salaryItemByCodeMap, salaryItemByNameMap);
+            if (baseItemCode == null) {
+                return null;
+            }
+            
+            BigDecimal baseAmount = allItemAmounts.get(baseItemCode);
+            if (baseAmount == null) {
+                return BigDecimal.ZERO;
+            }
+            // 即使基础金额为0，也应该进行计算（计算结果可能为0，但这是有效的）
+            
+            BigDecimal result;
+            if ("+".equals(operator)) {
+                result = baseAmount.add(BigDecimal.valueOf(value));
+            } else if ("-".equals(operator)) {
+                result = baseAmount.subtract(BigDecimal.valueOf(value));
+            } else if ("*".equals(operator)) {
+                // 乘除运算符统一按百分比处理，无论是否有百分号，以保持与前端一致
+                // 例如：S001*30 表示基本工资的30%，即 S001 * 0.30
+                result = baseAmount.multiply(BigDecimal.valueOf(value / 100));
+            } else if ("/".equals(operator)) {
+                // 乘除运算符统一按百分比处理，无论是否有百分号
+                result = baseAmount.divide(BigDecimal.valueOf(value / 100), 2, RoundingMode.HALF_UP);
+            } else {
+                return null;
+            }
+            
+            return result.setScale(2, RoundingMode.HALF_UP);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * 根据项目标识符（代码或名称）查找项目代码
+     */
+    private String findItemCode(String identifier, 
+                                Map<String, SalaryItem> salaryItemByCodeMap,
+                                Map<String, SalaryItem> salaryItemByNameMap) {
+        // 如果以S开头，可能是项目代码
+        if (identifier.startsWith("S")) {
+            if (salaryItemByCodeMap.containsKey(identifier)) {
+                return identifier;
+            }
+        }
+        
+        // 尝试按项目名称查找
+        if (salaryItemByNameMap.containsKey(identifier)) {
+            return salaryItemByNameMap.get(identifier).getItemCode();
+        }
+        
+        // 尝试按项目代码查找
+        if (salaryItemByCodeMap.containsKey(identifier)) {
+            return identifier;
+        }
+        
+        return null;
     }
 
     /**
@@ -874,20 +1145,14 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
         LocalDate nextMonth = monthDate.plusMonths(1);
         LocalDateTime nextMonthStart = nextMonth.atStartOfDay();
         
-        List<EmployeeArchive> employees = employeeArchiveService.getByThirdOrgId(thirdOrgId);
-        employees = employees.stream()
-                .filter(e -> EmployeeArchiveStatus.NORMAL.getCode().equals(e.getStatus()))
-                .filter(e -> e.getSalaryStandardId() != null)
-                .filter(e -> e.getRegistrationTime() != null && e.getRegistrationTime().isBefore(nextMonthStart))
-                .filter(e -> {
-                    // 检查薪酬标准是否存在且已通过
-                    if (e.getSalaryStandardId() != null) {
-                        SalaryStandard standard = salaryStandardService.getById(e.getSalaryStandardId());
-                        return standard != null && SalaryStandardStatus.APPROVED.getCode().equals(standard.getStatus());
-                    }
-                    return false;
-                })
-                .collect(Collectors.toList());
+        // 获取机构信息
+        Organization thirdOrg = organizationService.getById(thirdOrgId);
+        if (thirdOrg == null) {
+            return new ArrayList<>();
+        }
+        
+        // 使用统一的筛选方法获取符合条件的员工
+        List<EmployeeArchive> employees = filterEmployeesForIssuance(thirdOrg, monthDate);
 
         List<com.example.common.dto.SalaryIssuanceDetailResponse> result = new ArrayList<>();
 
@@ -923,25 +1188,140 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
             BigDecimal additionalIncome = BigDecimal.ZERO;
             BigDecimal additionalDeduction = BigDecimal.ZERO;
             
+            // 用于存储所有项目的金额（包括固定字段），用于计算规则计算
+            // 注意：固定字段初始化为0，只有明确包含的项目才会被设置
+            Map<String, BigDecimal> allItemAmounts = new HashMap<>();
+            allItemAmounts.put("S001", BigDecimal.ZERO);
+            allItemAmounts.put("S002", BigDecimal.ZERO);
+            allItemAmounts.put("S003", BigDecimal.ZERO);
+            allItemAmounts.put("S004", BigDecimal.ZERO);
+            allItemAmounts.put("S006", BigDecimal.ZERO);
+            allItemAmounts.put("S007", BigDecimal.ZERO);
+            allItemAmounts.put("S008", BigDecimal.ZERO);
+            allItemAmounts.put("S009", BigDecimal.ZERO);
+            
+            // 用于跟踪哪些固定字段被明确包含
+            Map<String, Boolean> fixedFieldIncluded = new HashMap<>();
+            fixedFieldIncluded.put("S001", false);
+            fixedFieldIncluded.put("S002", false);
+            fixedFieldIncluded.put("S003", false);
+            fixedFieldIncluded.put("S004", false);
+            fixedFieldIncluded.put("S006", false);
+            fixedFieldIncluded.put("S007", false);
+            fixedFieldIncluded.put("S008", false);
+            fixedFieldIncluded.put("S009", false);
+            
             if (employee.getSalaryStandardId() != null) {
                 SalaryStandard standard = salaryStandardService.getById(employee.getSalaryStandardId());
-                if (standard != null) {
+                // 只使用已通过的薪酬标准
+                if (standard != null && !SalaryStandardStatus.APPROVED.getCode().equals(standard.getStatus())) {
+                    standard = null;
+                }
+                // 检查薪酬标准的创建时间：必须早于或等于发放月份的第一天
+                if (standard != null && standard.getCreateTime() != null && monthDate != null) {
+                    LocalDate standardCreateDate = standard.getCreateTime().toLocalDate();
+                    LocalDate standardCreateMonth = standardCreateDate.withDayOfMonth(1);
+                    LocalDate issuanceMonthFirstDay = monthDate.withDayOfMonth(1);
+                    // 如果薪酬标准创建月份晚于发放月份，不使用该标准
+                    if (standardCreateMonth.isAfter(issuanceMonthFirstDay)) {
+                        standard = null;
+                    }
+                }
+                if (standard != null && SalaryStandardStatus.APPROVED.getCode().equals(standard.getStatus())) {
                     List<SalaryStandardItem> standardItems = salaryStandardItemService.getByStandardId(standard.getStandardId());
                     
+                    // 用于存储项目代码到项目的映射（用于计算规则解析）
+                    Map<String, SalaryItem> salaryItemByCodeMap = allSalaryItems.stream()
+                            .collect(Collectors.toMap(SalaryItem::getItemCode, item -> item, (v1, v2) -> v1));
+                    Map<String, SalaryItem> salaryItemByNameMap = allSalaryItems.stream()
+                            .collect(Collectors.toMap(SalaryItem::getItemName, item -> item, (v1, v2) -> v1));
+                    
+                    // 第一遍遍历：收集所有项目的金额（只处理应该包含的项目）
                     for (SalaryStandardItem standardItem : standardItems) {
                         SalaryItem salaryItem = salaryItemMap.get(standardItem.getItemId());
                         if (salaryItem != null) {
                             // 只包含在发放月份之前创建的薪酬项目
                             if (salaryItem.getCreateTime() != null && nextMonthStart != null) {
                                 if (!salaryItem.getCreateTime().isBefore(nextMonthStart)) {
-                                    // 薪酬项目是在发放月份之后创建的，跳过
                                     continue;
                                 }
                             }
                             
+                            // 检查项目是否应该被包含：
+                            // 1. 对于有计算规则的项目，只有isCalculated为true时才包含
+                            // 2. 对于没有计算规则的项目，只有金额大于0时才包含
+                            boolean hasCalculationRule = salaryItem.getCalculationRule() != null 
+                                    && !salaryItem.getCalculationRule().trim().isEmpty();
+                            boolean shouldInclude = false;
+                            
+                            if (hasCalculationRule) {
+                                // 有计算规则的项目，只有isCalculated为true时才包含
+                                shouldInclude = Boolean.TRUE.equals(standardItem.getIsCalculated());
+                            } else {
+                                // 没有计算规则的项目，金额大于0时才包含
+                                BigDecimal amount = standardItem.getAmount() != null ? standardItem.getAmount() : BigDecimal.ZERO;
+                                shouldInclude = amount.compareTo(BigDecimal.ZERO) > 0;
+                            }
+                            
+                            if (!shouldInclude) {
+                                continue;
+                            }
+                            
                             BigDecimal amount = standardItem.getAmount() != null ? standardItem.getAmount() : BigDecimal.ZERO;
                             String itemCode = salaryItem.getItemCode();
+                            allItemAmounts.put(itemCode, amount);
+                        }
+                    }
+                    
+                    // 第二遍遍历：处理项目并应用计算规则（只处理应该包含的项目）
+                    for (SalaryStandardItem standardItem : standardItems) {
+                        SalaryItem salaryItem = salaryItemMap.get(standardItem.getItemId());
+                        if (salaryItem != null) {
+                            // 只包含在发放月份之前创建的薪酬项目
+                            if (salaryItem.getCreateTime() != null && nextMonthStart != null) {
+                                if (!salaryItem.getCreateTime().isBefore(nextMonthStart)) {
+                                    continue;
+                                }
+                            }
+                            
+                            // 检查项目是否应该被包含：
+                            // 1. 对于有计算规则的项目，只有isCalculated为true时才包含
+                            // 2. 对于没有计算规则的项目，只有金额大于0时才包含
+                            boolean itemHasCalculationRule = salaryItem.getCalculationRule() != null 
+                                    && !salaryItem.getCalculationRule().trim().isEmpty();
+                            boolean shouldInclude = false;
+                            
+                            if (itemHasCalculationRule) {
+                                // 有计算规则的项目，只有isCalculated为true时才包含
+                                shouldInclude = Boolean.TRUE.equals(standardItem.getIsCalculated());
+                            } else {
+                                // 没有计算规则的项目，金额大于0时才包含
+                                BigDecimal amount = standardItem.getAmount() != null ? standardItem.getAmount() : BigDecimal.ZERO;
+                                shouldInclude = amount.compareTo(BigDecimal.ZERO) > 0;
+                            }
+                            
+                            if (!shouldInclude) {
+                                continue;
+                            }
+                            
+                            String itemCode = salaryItem.getItemCode();
                             String itemType = salaryItem.getItemType();
+                            BigDecimal amount = allItemAmounts.getOrDefault(itemCode, BigDecimal.ZERO);
+                            
+                            // 如果项目标记为自动计算且有计算规则，根据计算规则重新计算金额
+                            if (Boolean.TRUE.equals(standardItem.getIsCalculated()) 
+                                    && salaryItem.getCalculationRule() != null 
+                                    && !salaryItem.getCalculationRule().trim().isEmpty()) {
+                                BigDecimal calculatedAmount = calculateAmountByRule(
+                                        salaryItem.getCalculationRule(), 
+                                        allItemAmounts, 
+                                        salaryItemByCodeMap, 
+                                        salaryItemByNameMap);
+                                if (calculatedAmount != null) {
+                                    amount = calculatedAmount;
+                                    allItemAmounts.put(itemCode, amount);
+                                }
+                            }
                             
                             // 检查是否映射到固定字段
                             boolean isFixedField = "S001".equals(itemCode) || "S002".equals(itemCode) ||
@@ -949,14 +1329,35 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
                                     "S006".equals(itemCode) || "S007".equals(itemCode) ||
                                     "S008".equals(itemCode) || "S009".equals(itemCode);
                             
+                            // 如果是固定字段，标记为已包含
+                            if (isFixedField) {
+                                fixedFieldIncluded.put(itemCode, true);
+                            }
+                            
                             // 如果是新项目（无法映射到固定字段），放入dynamicItems
-                            if (!isFixedField && amount.compareTo(BigDecimal.ZERO) > 0) {
-                                dynamicItems.put(itemCode, amount);
-                                // 累加到总收入或总扣除中
-                                if ("INCOME".equals(itemType)) {
-                                    additionalIncome = additionalIncome.add(amount);
-                                } else if ("DEDUCTION".equals(itemType)) {
-                                    additionalDeduction = additionalDeduction.add(amount);
+                            // 注意：只有用户明确选择包含的项目才会放入dynamicItems
+                            if (!isFixedField) {
+                                // 对于有计算规则的项目，只有isCalculated为true时才放入
+                                // 对于没有计算规则的项目，只有金额大于0时才放入
+                                boolean shouldAddToDynamic = false;
+                                if (itemHasCalculationRule) {
+                                    // 有计算规则的项目，只有isCalculated为true时才放入
+                                    shouldAddToDynamic = Boolean.TRUE.equals(standardItem.getIsCalculated());
+                                } else {
+                                    // 没有计算规则的项目，金额大于0时才放入
+                                    shouldAddToDynamic = amount.compareTo(BigDecimal.ZERO) > 0;
+                                }
+                                
+                                if (shouldAddToDynamic) {
+                                    dynamicItems.put(itemCode, amount);
+                                    // 累加到总收入或总扣除中（只有金额大于0时才累加）
+                                    if (amount.compareTo(BigDecimal.ZERO) > 0) {
+                                        if ("INCOME".equals(itemType)) {
+                                            additionalIncome = additionalIncome.add(amount);
+                                        } else if ("DEDUCTION".equals(itemType)) {
+                                            additionalDeduction = additionalDeduction.add(amount);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -964,13 +1365,67 @@ public class SalaryIssuanceServiceImpl extends ServiceImpl<SalaryIssuanceMapper,
                 }
             }
             
+            // 更新固定字段：只有明确包含的项目才设置值
+            if (fixedFieldIncluded.get("S001")) {
+                response.setBasicSalary(allItemAmounts.get("S001"));
+            } else {
+                response.setBasicSalary(null);
+            }
+            if (fixedFieldIncluded.get("S002")) {
+                response.setPerformanceBonus(allItemAmounts.get("S002"));
+            } else {
+                response.setPerformanceBonus(null);
+            }
+            if (fixedFieldIncluded.get("S003")) {
+                response.setTransportationAllowance(allItemAmounts.get("S003"));
+            } else {
+                response.setTransportationAllowance(null);
+            }
+            if (fixedFieldIncluded.get("S004")) {
+                response.setMealAllowance(allItemAmounts.get("S004"));
+            } else {
+                response.setMealAllowance(null);
+            }
+            if (fixedFieldIncluded.get("S006")) {
+                response.setPensionInsurance(allItemAmounts.get("S006"));
+            } else {
+                response.setPensionInsurance(null);
+            }
+            if (fixedFieldIncluded.get("S007")) {
+                response.setMedicalInsurance(allItemAmounts.get("S007"));
+            } else {
+                response.setMedicalInsurance(null);
+            }
+            if (fixedFieldIncluded.get("S008")) {
+                response.setUnemploymentInsurance(allItemAmounts.get("S008"));
+            } else {
+                response.setUnemploymentInsurance(null);
+            }
+            if (fixedFieldIncluded.get("S009")) {
+                response.setHousingFund(allItemAmounts.get("S009"));
+            } else {
+                response.setHousingFund(null);
+            }
+            
             response.setDynamicItems(dynamicItems);
             
             // 重新计算合计（包括动态项目）
-            BigDecimal totalIncome = (tempDetail.getTotalIncome() != null ? tempDetail.getTotalIncome() : BigDecimal.ZERO)
-                    .add(additionalIncome);
-            BigDecimal totalDeduction = (tempDetail.getTotalDeduction() != null ? tempDetail.getTotalDeduction() : BigDecimal.ZERO)
-                    .add(additionalDeduction);
+            BigDecimal totalIncome = BigDecimal.ZERO;
+            totalIncome = totalIncome.add(response.getBasicSalary() != null ? response.getBasicSalary() : BigDecimal.ZERO);
+            totalIncome = totalIncome.add(response.getPerformanceBonus() != null ? response.getPerformanceBonus() : BigDecimal.ZERO);
+            totalIncome = totalIncome.add(response.getTransportationAllowance() != null ? response.getTransportationAllowance() : BigDecimal.ZERO);
+            totalIncome = totalIncome.add(response.getMealAllowance() != null ? response.getMealAllowance() : BigDecimal.ZERO);
+            totalIncome = totalIncome.add(response.getAwardAmount() != null ? response.getAwardAmount() : BigDecimal.ZERO);
+            totalIncome = totalIncome.add(additionalIncome);
+            
+            BigDecimal totalDeduction = BigDecimal.ZERO;
+            totalDeduction = totalDeduction.add(response.getPensionInsurance() != null ? response.getPensionInsurance() : BigDecimal.ZERO);
+            totalDeduction = totalDeduction.add(response.getMedicalInsurance() != null ? response.getMedicalInsurance() : BigDecimal.ZERO);
+            totalDeduction = totalDeduction.add(response.getUnemploymentInsurance() != null ? response.getUnemploymentInsurance() : BigDecimal.ZERO);
+            totalDeduction = totalDeduction.add(response.getHousingFund() != null ? response.getHousingFund() : BigDecimal.ZERO);
+            totalDeduction = totalDeduction.add(response.getDeductionAmount() != null ? response.getDeductionAmount() : BigDecimal.ZERO);
+            totalDeduction = totalDeduction.add(additionalDeduction);
+            
             BigDecimal netPay = totalIncome.subtract(totalDeduction);
             
             response.setTotalIncome(totalIncome.setScale(2, RoundingMode.HALF_UP));

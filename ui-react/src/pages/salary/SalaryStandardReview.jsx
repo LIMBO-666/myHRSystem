@@ -276,8 +276,25 @@ const SalaryStandardReview = () => {
             return sortA - sortB
           })
         
-        // 重新计算有计算规则的项目
-        mergedItems = recalculateCalculatedItems(mergedItems)
+        // 重新计算有计算规则的项目（只计算那些已经在标准中设置的项目）
+        // 注意：只重新计算那些已经在标准中设置的项目（amount不为null或isCalculated为true）
+        mergedItems = mergedItems.map(item => {
+          // 如果项目已经在标准中设置（有金额或标记为自动计算），才重新计算
+          const hasAmount = item.amount != null && item.amount > 0
+          const isCalculated = item.isCalculated === true
+          
+          if ((hasAmount || isCalculated) && isAutoCalculated(item)) {
+            const calculatedAmount = calculateByRule(item, mergedItems)
+            if (calculatedAmount !== null) {
+              return {
+                ...item,
+                amount: calculatedAmount,
+                isCalculated: true
+              }
+            }
+          }
+          return item
+        })
         
         return mergedItems
   }
@@ -363,8 +380,22 @@ const SalaryStandardReview = () => {
         // 重新计算所有有计算规则的项目，确保提交时数据准确
         const finalItems = recalculateCalculatedItems(editableItems)
         
-        const updateData = {
-          items: finalItems.map(item => {
+        // 只提交有效的项目：
+        // 1. 对于有计算规则的项目，只有isCalculated为true时才包含
+        // 2. 对于没有计算规则的项目，只有金额大于0时才包含
+        const validItems = finalItems
+          .filter(item => {
+            const salaryItem = salaryItems.find(si => si.itemId === item.itemId)
+            if (!salaryItem) return false
+            
+            // 如果有计算规则，只有isCalculated为true时才包含
+            if (salaryItem.calculationRule && salaryItem.calculationRule.trim() !== '') {
+              return item.isCalculated === true
+            }
+            // 没有计算规则的项目，金额大于0时才包含
+            return (item.amount || 0) > 0
+          })
+          .map(item => {
             // 如果有计算规则，重新计算一次确保准确性
             let amount = item.amount || 0
             if (isAutoCalculated(item)) {
@@ -380,6 +411,9 @@ const SalaryStandardReview = () => {
               isCalculated: isAutoCalculated(item)
             }
           })
+        
+        const updateData = {
+          items: validItems
         }
         const updateResponse = await salaryStandardService.update(
           currentRecord.standardId,
@@ -421,8 +455,22 @@ const SalaryStandardReview = () => {
         // 重新计算所有有计算规则的项目，确保提交时数据准确
         const finalItems = recalculateCalculatedItems(editableItems)
         
-        const updateData = {
-          items: finalItems.map(item => {
+        // 只提交有效的项目：
+        // 1. 对于有计算规则的项目，只有isCalculated为true时才包含
+        // 2. 对于没有计算规则的项目，只有金额大于0时才包含
+        const validItems = finalItems
+          .filter(item => {
+            const salaryItem = salaryItems.find(si => si.itemId === item.itemId)
+            if (!salaryItem) return false
+            
+            // 如果有计算规则，只有isCalculated为true时才包含
+            if (salaryItem.calculationRule && salaryItem.calculationRule.trim() !== '') {
+              return item.isCalculated === true
+            }
+            // 没有计算规则的项目，金额大于0时才包含
+            return (item.amount || 0) > 0
+          })
+          .map(item => {
             // 如果有计算规则，重新计算一次确保准确性
             let amount = item.amount || 0
             if (isAutoCalculated(item)) {
@@ -438,6 +486,9 @@ const SalaryStandardReview = () => {
               isCalculated: isAutoCalculated(item)
             }
           })
+        
+        const updateData = {
+          items: validItems
         }
         const updateResponse = await salaryStandardService.update(
           currentRecord.standardId,

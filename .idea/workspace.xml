@@ -5,35 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d5e2e6e7-46f5-4b74-ba83-776aae91eaa6" name="更改" comment="feat add ui">
-      <change afterPath="$PROJECT_DIR$/storage/src/main/resources/photofile/202501010103.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/storage/src/main/resources/photofile/202501010202.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/API_DOCUMENTATION.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/IDEA启动指南.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/java/com/example/authorization/config/SecurityConfig.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/authorization-management/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/authorization-management/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/src/main/java/com/example/common/enums/UserRole.java" beforeDir="false" afterPath="$PROJECT_DIR$/common/src/main/java/com/example/common/enums/UserRole.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/config/WebMvcConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/config/WebMvcConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/service/EmployeeArchiveManagementService.java" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/java/com/example/human/resource/archive/management/service/EmployeeArchiveManagementService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/human-resource-archive-management/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-archive-management/src/main/resources/application.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/human-resource-salary-management/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/human-resource-salary-management/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/storage/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/EmployeeArchiveServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/EmployeeArchiveServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/FileStorageServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/FileStorageServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/src/main/resources/database/README_TEST_DATA.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/src/main/resources/database/myHRSystem.sql" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/resources/database/myHRSystem.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/storage/src/main/resources/database/test_data.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/OrganizationController.java" beforeDir="false" afterPath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/OrganizationController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/PositionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/PositionController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/SalaryItemController.java" beforeDir="false" afterPath="$PROJECT_DIR$/system-management/src/main/java/com/example/system/management/controller/SalaryItemController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/SalaryIssuanceServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/SalaryIssuanceServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/SalaryStandardServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/storage/src/main/java/com/example/storage/service/Impl/SalaryStandardServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/system-management/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/system-management/src/main/resources/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui-react/src/layouts/MainLayout.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/layouts/MainLayout.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui-react/src/pages/archive/ArchiveQuery.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/pages/archive/ArchiveQuery.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui-react/src/pages/archive/ArchiveRegister.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/pages/archive/ArchiveRegister.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui-react/src/pages/archive/ArchiveReview.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/pages/archive/ArchiveReview.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui-react/src/routes/AppRoutes.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/routes/AppRoutes.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ui-react/项目说明.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui-react/src/pages/issuance/SalaryIssuanceQuery.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/pages/issuance/SalaryIssuanceQuery.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui-react/src/pages/issuance/SalaryIssuanceRegister.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/pages/issuance/SalaryIssuanceRegister.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui-react/src/pages/issuance/SalaryIssuanceReview.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/pages/issuance/SalaryIssuanceReview.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui-react/src/pages/salary/SalaryStandardQuery.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/pages/salary/SalaryStandardQuery.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui-react/src/pages/salary/SalaryStandardRegister.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/pages/salary/SalaryStandardRegister.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui-react/src/pages/salary/SalaryStandardReview.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/pages/salary/SalaryStandardReview.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui-react/src/pages/salary/SalaryStandardUpdate.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/ui-react/src/pages/salary/SalaryStandardUpdate.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -106,11 +91,11 @@
     "Spring Boot.MyHrSystemApplication.executor": "Run",
     "Spring Boot.SystemManagementApplication.executor": "Run",
     "deletionFromPopupRequiresConfirmation": "false",
-    "git-widget-placeholder": "theist",
+    "git-widget-placeholder": "main",
     "go.import.settings.migrated": "true",
     "jdk.selected.JAVA_MODULE": "17",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "E:/myHRSystem/storage/src/main/resources/database/link_salary_standard_to_employees.sql",
+    "last_opened_file_path": "E:/myHRSystem/storage/src/main/resources/database/myHRSystem.sql",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -231,14 +216,14 @@
     <list>
       <item itemvalue="Spring Boot.AuthorizationManagementApplication" />
       <item itemvalue="Spring Boot.SystemManagementApplication" />
-      <item itemvalue="Spring Boot.HumanResourceArchiveManagementApplication" />
       <item itemvalue="Spring Boot.HumanResourceSalaryManagementApplication" />
+      <item itemvalue="Spring Boot.HumanResourceArchiveManagementApplication" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Spring Boot.SystemManagementApplication" />
         <item itemvalue="Spring Boot.HumanResourceSalaryManagementApplication" />
         <item itemvalue="Spring Boot.HumanResourceArchiveManagementApplication" />
+        <item itemvalue="Spring Boot.SystemManagementApplication" />
         <item itemvalue="Spring Boot.AuthorizationManagementApplication" />
       </list>
     </recent_temporary>

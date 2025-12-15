@@ -362,12 +362,30 @@ const SalaryIssuanceReview = () => {
     const nextMonthStart = issuanceMonth ? issuanceMonth.add(1, 'month').startOf('month') : null
 
     // 添加动态收入项目列（排除已映射的固定字段）
-    // 只显示在发放月份之前创建的薪酬项目
+    // 只显示在发放月份之前创建的薪酬项目，并且至少有一个员工有该项目
     const fixedIncomeCodes = ['S001', 'S002', 'S003', 'S004']
+    
+    // 收集所有员工中出现的动态收入项目代码
+    const existingIncomeItemCodes = new Set()
+    employeeDetails.forEach(detail => {
+      if (detail.dynamicItems) {
+        Object.keys(detail.dynamicItems).forEach(itemCode => {
+          const item = salaryItems.find(i => i.itemCode === itemCode)
+          if (item && item.itemType === 'INCOME' && !fixedIncomeCodes.includes(itemCode)) {
+            existingIncomeItemCodes.add(itemCode)
+          }
+        })
+      }
+    })
+    
     const dynamicIncomeColumns = salaryItems
       .filter(item => {
         // 过滤固定字段
         if (item.itemType !== 'INCOME' || fixedIncomeCodes.includes(item.itemCode)) {
+          return false
+        }
+        // 只显示至少有一个员工有的项目
+        if (!existingIncomeItemCodes.has(item.itemCode)) {
           return false
         }
         // 如果指定了发放月份，只显示在该月份之前创建的薪酬项目
@@ -433,12 +451,30 @@ const SalaryIssuanceReview = () => {
     ]
 
     // 添加动态扣除项目列（排除已映射的固定字段）
-    // 只显示在发放月份之前创建的薪酬项目
+    // 只显示在发放月份之前创建的薪酬项目，并且至少有一个员工有该项目
     const fixedDeductionCodes = ['S006', 'S007', 'S008', 'S009']
+    
+    // 收集所有员工中出现的动态扣除项目代码
+    const existingDeductionItemCodes = new Set()
+    employeeDetails.forEach(detail => {
+      if (detail.dynamicItems) {
+        Object.keys(detail.dynamicItems).forEach(itemCode => {
+          const item = salaryItems.find(i => i.itemCode === itemCode)
+          if (item && item.itemType === 'DEDUCTION' && !fixedDeductionCodes.includes(itemCode)) {
+            existingDeductionItemCodes.add(itemCode)
+          }
+        })
+      }
+    })
+    
     const dynamicDeductionColumns = salaryItems
       .filter(item => {
         // 过滤固定字段
         if (item.itemType !== 'DEDUCTION' || fixedDeductionCodes.includes(item.itemCode)) {
+          return false
+        }
+        // 只显示至少有一个员工有的项目
+        if (!existingDeductionItemCodes.has(item.itemCode)) {
           return false
         }
         // 如果指定了发放月份，只显示在该月份之前创建的薪酬项目
