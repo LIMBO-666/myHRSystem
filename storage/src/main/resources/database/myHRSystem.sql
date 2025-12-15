@@ -521,7 +521,7 @@ CREATE TABLE `user` (
   `username` varchar(50) NOT NULL COMMENT '用户名',
   `password` varchar(255) NOT NULL COMMENT '密码',
   `real_name` varchar(50) NOT NULL COMMENT '真实姓名',
-  `role` varchar(20) NOT NULL COMMENT '角色：HR_SPECIALIST(人事专员), HR_MANAGER(人事经理), SALARY_SPECIALIST(薪酬专员), SALARY_MANAGER(薪酬经理)',
+  `role` varchar(20) NOT NULL COMMENT '角色：SYSTEM_ADMIN(系统管理员), HR_SPECIALIST(人事专员), HR_MANAGER(人事经理), SALARY_SPECIALIST(薪酬专员), SALARY_MANAGER(薪酬经理)',
   `email` varchar(100) DEFAULT NULL COMMENT '邮箱',
   `phone` varchar(20) DEFAULT NULL COMMENT '电话',
   `status` varchar(20) DEFAULT 'ACTIVE' COMMENT '状态：ACTIVE(激活), INACTIVE(禁用)',
@@ -529,7 +529,7 @@ CREATE TABLE `user` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `username` (`username`),
-  CONSTRAINT `chk_user_role` CHECK ((`role` in (_utf8mb4'HR_SPECIALIST',_utf8mb4'HR_MANAGER',_utf8mb4'SALARY_SPECIALIST',_utf8mb4'SALARY_MANAGER'))),
+  CONSTRAINT `chk_user_role` CHECK ((`role` in (_utf8mb4'SYSTEM_ADMIN',_utf8mb4'HR_SPECIALIST',_utf8mb4'HR_MANAGER',_utf8mb4'SALARY_SPECIALIST',_utf8mb4'SALARY_MANAGER'))),
   CONSTRAINT `chk_user_status` CHECK ((`status` in (_utf8mb4'ACTIVE',_utf8mb4'INACTIVE')))
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户表';
 
@@ -537,7 +537,7 @@ CREATE TABLE `user` (
 -- Records of user
 -- ----------------------------
 BEGIN;
-INSERT INTO `user` (`user_id`, `username`, `password`, `real_name`, `role`, `email`, `phone`, `status`, `create_time`, `update_time`) VALUES (1, 'admin', '$2a$10$OjBAzQZ5FxSaRAW2JnBGJetniIf.AMMRCa0lRYaI9BWtha.P5xnWi', '系统管理员', 'HR_MANAGER', 'admin@example.com', '13800138000', 'ACTIVE', '2025-11-04 11:31:53', '2025-11-04 11:31:53');
+INSERT INTO `user` (`user_id`, `username`, `password`, `real_name`, `role`, `email`, `phone`, `status`, `create_time`, `update_time`) VALUES (1, 'admin', '$2a$10$OjBAzQZ5FxSaRAW2JnBGJetniIf.AMMRCa0lRYaI9BWtha.P5xnWi', '系统管理员', 'SYSTEM_ADMIN', 'admin@example.com', '13800138000', 'ACTIVE', '2025-11-04 11:31:53', '2025-11-04 11:31:53');
 INSERT INTO `user` (`user_id`, `username`, `password`, `real_name`, `role`, `email`, `phone`, `status`, `create_time`, `update_time`) VALUES (2, 'hr01', '$2a$10$OjBAzQZ5FxSaRAW2JnBGJetniIf.AMMRCa0lRYaI9BWtha.P5xnWi', '王管理员', 'HR_SPECIALIST', 'hr01@example.com', '13800138001', 'ACTIVE', '2025-11-04 11:31:53', '2025-11-04 11:31:53');
 INSERT INTO `user` (`user_id`, `username`, `password`, `real_name`, `role`, `email`, `phone`, `status`, `create_time`, `update_time`) VALUES (3, 'hr02', '$2a$10$OjBAzQZ5FxSaRAW2JnBGJetniIf.AMMRCa0lRYaI9BWtha.P5xnWi', '李管理员', 'HR_MANAGER', 'hr02@example.com', '13800138002', 'ACTIVE', '2025-11-04 11:31:53', '2025-11-04 11:31:53');
 INSERT INTO `user` (`user_id`, `username`, `password`, `real_name`, `role`, `email`, `phone`, `status`, `create_time`, `update_time`) VALUES (4, 'salary01', '$2a$10$OjBAzQZ5FxSaRAW2JnBGJetniIf.AMMRCa0lRYaI9BWtha.P5xnWi', '张经理', 'SALARY_SPECIALIST', 'salary01@example.com', '13800138003', 'ACTIVE', '2025-11-04 11:31:53', '2025-11-04 11:31:53');

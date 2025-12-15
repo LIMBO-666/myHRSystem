@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/salary-items")
 @RequiredArgsConstructor
-@RequireRole({"SALARY_MANAGER"})
+@RequireRole({"SALARY_MANAGER", "SYSTEM_ADMIN"})
 public class SalaryItemController {
 
     private final SalaryItemService salaryItemService;
@@ -33,7 +33,7 @@ public class SalaryItemController {
      * 薪酬专员和薪酬经理也可以访问（用于薪酬标准登记）
      */
     @GetMapping
-    @RequireRole({"HR_MANAGER", "SALARY_SPECIALIST", "SALARY_MANAGER"})
+    @RequireRole({"HR_MANAGER", "SALARY_SPECIALIST", "SALARY_MANAGER", "SYSTEM_ADMIN"})
     public ApiResponse<List<SalaryItemResponse>> getSalaryItems(
             @RequestParam(value = "itemType", required = false) String itemType,
             @RequestParam(value = "status", required = false) String status) {
@@ -66,7 +66,7 @@ public class SalaryItemController {
      * 薪酬专员和薪酬经理也可以访问（用于薪酬标准登记）
      */
     @GetMapping("/{itemId}")
-    @RequireRole({"HR_MANAGER", "SALARY_SPECIALIST", "SALARY_MANAGER"})
+    @RequireRole({"HR_MANAGER", "SALARY_SPECIALIST", "SALARY_MANAGER", "SYSTEM_ADMIN"})
     public ApiResponse<SalaryItemResponse> getSalaryItem(@PathVariable("itemId") Long itemId) {
         SalaryItem item = salaryItemService.getById(itemId);
         if (item == null) {
@@ -80,7 +80,7 @@ public class SalaryItemController {
      * 只有薪酬经理可以访问
      */
     @PostMapping
-    @RequireRole({"SALARY_MANAGER"})
+    @RequireRole({"SALARY_MANAGER", "SYSTEM_ADMIN"})
     public ApiResponse<SalaryItemResponse> createSalaryItem(@Valid @RequestBody CreateSalaryItemRequest request) {
         // 验证项目编号唯一性（只检查激活状态的项目）
         SalaryItem existingActive = salaryItemService.getByItemCode(request.getItemCode());
@@ -130,7 +130,7 @@ public class SalaryItemController {
      * 只有薪酬经理可以访问
      */
     @PutMapping("/{itemId}")
-    @RequireRole({"SALARY_MANAGER"})
+    @RequireRole({"SALARY_MANAGER", "SYSTEM_ADMIN"})
     public ApiResponse<SalaryItemResponse> updateSalaryItem(@PathVariable("itemId") Long itemId,
                                                              @Valid @RequestBody UpdateSalaryItemRequest request) {
         SalaryItem item = salaryItemService.getById(itemId);
@@ -162,7 +162,7 @@ public class SalaryItemController {
      * 只有薪酬经理可以访问
      */
     @DeleteMapping("/{itemId}")
-    @RequireRole({"SALARY_MANAGER"})
+    @RequireRole({"SALARY_MANAGER", "SYSTEM_ADMIN"})
     public ApiResponse<Void> deleteSalaryItem(@PathVariable("itemId") Long itemId) {
         SalaryItem item = salaryItemService.getById(itemId);
         if (item == null) {

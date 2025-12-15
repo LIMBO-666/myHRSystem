@@ -56,6 +56,11 @@ const DefaultRedirect = () => {
     return <Navigate to="/login" replace />
   }
   
+  // 系统管理员：跳转到机构设置
+  if (hasRole(['SYSTEM_ADMIN'])) {
+    return <Navigate to="/org-level1" replace />
+  }
+  
   // 人事专员：跳转到档案登记
   if (hasRole(['HR_SPECIALIST'])) {
     return <Navigate to="/archive-register" replace />
@@ -99,14 +104,14 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        {/* 系统管理 - 只有人力资源经理可以访问 */}
-        <Route path="org-level1" element={<ProtectedRoute roles={['HR_MANAGER']}><OrgLevel1 /></ProtectedRoute>} />
-        <Route path="org-level2" element={<ProtectedRoute roles={['HR_MANAGER']}><OrgLevel2 /></ProtectedRoute>} />
-        <Route path="org-level3" element={<ProtectedRoute roles={['HR_MANAGER']}><OrgLevel3 /></ProtectedRoute>} />
-        <Route path="position" element={<ProtectedRoute roles={['HR_MANAGER']}><Position /></ProtectedRoute>} />
+        {/* 系统管理 - 系统管理员可访问 */}
+        <Route path="org-level1" element={<ProtectedRoute roles={['SYSTEM_ADMIN']}><OrgLevel1 /></ProtectedRoute>} />
+        <Route path="org-level2" element={<ProtectedRoute roles={['SYSTEM_ADMIN']}><OrgLevel2 /></ProtectedRoute>} />
+        <Route path="org-level3" element={<ProtectedRoute roles={['SYSTEM_ADMIN']}><OrgLevel3 /></ProtectedRoute>} />
+        <Route path="position" element={<ProtectedRoute roles={['SYSTEM_ADMIN']}><Position /></ProtectedRoute>} />
         
-        {/* 薪酬项目管理 - 只有薪酬经理可以访问 */}
-        <Route path="salary-item" element={<ProtectedRoute roles={['SALARY_MANAGER']}><SalaryItem /></ProtectedRoute>} />
+        {/* 薪酬项目管理 - 系统管理员或薪酬经理可访问 */}
+        <Route path="salary-item" element={<ProtectedRoute roles={['SYSTEM_ADMIN', 'SALARY_MANAGER']}><SalaryItem /></ProtectedRoute>} />
 
         {/* 员工档案管理 */}
         <Route path="archive-register" element={<ProtectedRoute roles={['HR_SPECIALIST']}><ArchiveRegister /></ProtectedRoute>} />

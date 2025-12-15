@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Table, Form, Input, Select, DatePicker, Button, Space, message, Modal, Row, Col, Divider, Descriptions } from 'antd'
-import { SearchOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons'
+import { Table, Form, Input, Select, DatePicker, Button, Space, message, Modal, Row, Col, Divider, Descriptions, Image, Upload } from 'antd'
+import { SearchOutlined, EyeOutlined, EditOutlined, UploadOutlined } from '@ant-design/icons'
 import { employeeArchiveService } from '../../services/employeeArchiveService'
 import { organizationService } from '../../services/organizationService'
 import { positionService } from '../../services/positionService'
@@ -40,6 +40,7 @@ const ArchiveQuery = () => {
   const [updateModalVisible, setUpdateModalVisible] = useState(false)
   const [currentRecord, setCurrentRecord] = useState(null)
   const [updateLoading, setUpdateLoading] = useState(false)
+  const [updatePhotoFile, setUpdatePhotoFile] = useState(null)
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -204,7 +205,10 @@ const ArchiveQuery = () => {
       // 获取档案详情
       const detailResponse = await employeeArchiveService.getDetail(record.archiveId)
       if (detailResponse.code === 200) {
-        setCurrentRecord(detailResponse.data)
+        const detail = detailResponse.data
+        console.log('档案详情:', detail)
+        console.log('照片URL:', detail.photoUrl)
+        setCurrentRecord(detail)
         setViewModalVisible(true)
       }
     } catch (error) {
@@ -219,6 +223,7 @@ const ArchiveQuery = () => {
       if (detailResponse.code === 200) {
         const detail = detailResponse.data
         setCurrentRecord(detail)
+        setUpdatePhotoFile(null) // 重置照片文件
         // 设置表单初始值
         updateForm.setFieldsValue({
           ...detail,
@@ -230,21 +235,61 @@ const ArchiveQuery = () => {
       message.error('获取档案详情失败')
     }
   }
+  
+  const handleUpdatePhotoChange = (info) => {
+    if (info.file.status === 'done' || info.file.originFileObj) {
+      setUpdatePhotoFile(info.file.originFileObj || info.file)
+    }
+  }
+  
+  const normFile = (e) => {
+    if (Array.isArray(e)) {
+      return e
+    }
+    return e?.fileList
+  }
 
   const handleUpdateSubmit = async (values) => {
     setUpdateLoading(true)
     try {
+      // 从表单值中获取照片文件
+      let photoFileToUpload = updatePhotoFile
+      if (values.photo && values.photo.length > 0) {
+        const file = values.photo[0]
+        photoFileToUpload = file.originFileObj || file
+      }
+      
       const submitData = {
         ...values,
-        birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : null
+        birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : null,
+        photo: undefined // 移除photo字段，不发送到后端
       }
       
       const response = await employeeArchiveService.update(currentRecord.archiveId, submitData)
       if (response.code === 200) {
-        message.success('档案变更成功，等待复核')
+        // 如果有新照片，上传照片
+        if (photoFileToUpload) {
+          try {
+            console.log('开始上传照片，档案ID:', currentRecord.archiveId, '文件:', photoFileToUpload)
+            const uploadResponse = await employeeArchiveService.uploadPhoto(currentRecord.archiveId, photoFileToUpload)
+            console.log('照片上传响应:', uploadResponse)
+            if (uploadResponse.code === 200) {
+              message.success('档案变更成功，照片已更新，等待复核')
+            } else {
+              message.warning('档案变更成功，但照片上传失败：' + (uploadResponse.message || '未知错误'))
+            }
+          } catch (error) {
+            console.error('上传照片失败:', error)
+            message.warning('档案变更成功，但照片上传失败：' + (error.message || '未知错误'))
+          }
+        } else {
+          message.success('档案变更成功，等待复核')
+        }
+        
         setUpdateModalVisible(false)
         updateForm.resetFields()
         setCurrentRecord(null)
+        setUpdatePhotoFile(null)
         loadData()
       } else {
         message.error(response.message || '变更失败')
@@ -478,6 +523,46 @@ const ArchiveQuery = () => {
           <div>
             {/* 基本信息 */}
             <Divider orientation="left">基本信息</Divider>
+            {currentRecord.photoUrl ? (
+              <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col span={24}>
+                  <div style={{ marginBottom: 8 }}>
+                    <strong>员工照片</strong>
+                    <div style={{ fontSize: '12px', color: '#999', marginTop: 4 }}>
+                      URL: {currentRecord.photoUrl}
+                    </div>
+                  </div>
+                  <Image
+                    width={150}
+                    src={currentRecord.photoUrl.startsWith('http') 
+                      ? currentRecord.photoUrl 
+                      : `http://localhost:8082${currentRecord.photoUrl}`}
+                    alt="员工照片"
+                    fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3MoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
+                    onError={(e) => {
+                      const imgSrc = currentRecord.photoUrl.startsWith('http') 
+                        ? currentRecord.photoUrl 
+                        : `http://localhost:8082${currentRecord.photoUrl}`
+                      console.error('图片加载失败:', {
+                        originalUrl: currentRecord.photoUrl,
+                        fullUrl: imgSrc,
+                        error: e
+                      })
+                      message.error('图片加载失败，请检查照片URL是否正确')
+                    }}
+                    onLoad={() => {
+                      console.log('图片加载成功:', currentRecord.photoUrl)
+                    }}
+                  />
+                </Col>
+              </Row>
+            ) : (
+              <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col span={24}>
+                  <div style={{ color: '#999' }}>暂无照片</div>
+                </Col>
+              </Row>
+            )}
             <Descriptions column={2} bordered>
               <Descriptions.Item label="档案编号">{currentRecord.archiveNumber || '-'}</Descriptions.Item>
               <Descriptions.Item label="姓名">{currentRecord.name || '-'}</Descriptions.Item>
@@ -557,7 +642,7 @@ const ArchiveQuery = () => {
       </Modal>
 
       {/* 变更弹窗 - 仅人事专员可见 */}
-      {hasRole(['HR_SPECIALIST']) && (
+      {hasRole(['HR_SPECIALIST']) && updateModalVisible && (
         <Modal
           title="档案变更"
           open={updateModalVisible}
@@ -566,6 +651,7 @@ const ArchiveQuery = () => {
             setUpdateModalVisible(false)
             updateForm.resetFields()
             setCurrentRecord(null)
+            setUpdatePhotoFile(null)
           }}
           width={900}
           confirmLoading={updateLoading}
@@ -753,6 +839,47 @@ const ArchiveQuery = () => {
               <Col span={12}>
                 <Form.Item name="qq" label="QQ">
                   <Input />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            {/* 员工照片 */}
+            <Divider orientation="left">员工照片</Divider>
+            <Row gutter={16}>
+              <Col span={24}>
+                {currentRecord?.photoUrl && !updatePhotoFile && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ marginBottom: 8 }}>
+                      <strong>当前照片</strong>
+                    </div>
+                    <Image
+                      width={150}
+                      src={currentRecord.photoUrl.startsWith('http') 
+                        ? currentRecord.photoUrl 
+                        : `http://localhost:8082${currentRecord.photoUrl}`}
+                      alt="当前员工照片"
+                      fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3MoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
+                    />
+                  </div>
+                )}
+                <Form.Item
+                  name="photo"
+                  label={updatePhotoFile ? "新照片（已选择）" : "上传新照片"}
+                  valuePropName="fileList"
+                  getValueFromEvent={normFile}
+                >
+                  <Upload
+                    beforeUpload={() => false}
+                    onChange={handleUpdatePhotoChange}
+                    maxCount={1}
+                    accept="image/*"
+                    listType="picture-card"
+                  >
+                    <div>
+                      <UploadOutlined />
+                      <div style={{ marginTop: 8 }}>上传照片</div>
+                    </div>
+                  </Upload>
                 </Form.Item>
               </Col>
             </Row>

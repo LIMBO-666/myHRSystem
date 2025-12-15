@@ -8,6 +8,11 @@ import lombok.Getter;
 @Getter
 public enum UserRole {
     /**
+     * 系统管理员
+     */
+    SYSTEM_ADMIN("SYSTEM_ADMIN", "系统管理员"),
+
+    /**
      * 人事专员
      */
     HR_SPECIALIST("HR_SPECIALIST", "人事专员"),

@@ -454,8 +454,11 @@ public class EmployeeArchiveServiceImpl extends ServiceImpl<EmployeeArchiveMappe
         }
 
         // 如果存在旧照片，可以考虑删除旧文件（这里暂时不删除，保留历史记录）
+        System.out.println("更新照片URL - 档案ID: " + archiveId + ", 照片URL: " + photoUrl);
         archive.setPhotoUrl(photoUrl);
-        return updateById(archive);
+        boolean result = updateById(archive);
+        System.out.println("照片URL更新结果: " + result);
+        return result;
     }
 }
 

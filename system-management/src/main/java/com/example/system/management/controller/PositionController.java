@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/positions")
 @RequiredArgsConstructor
-@RequireRole({"HR_MANAGER"})
+@RequireRole({"HR_MANAGER", "SYSTEM_ADMIN"})
 public class PositionController {
 
     private final PositionService positionService;
@@ -36,7 +36,7 @@ public class PositionController {
      * 人事专员、人事经理、薪酬专员和薪酬经理都可以访问（用于档案登记和薪酬标准登记）
      */
     @GetMapping
-    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SALARY_SPECIALIST", "SALARY_MANAGER"})
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SALARY_SPECIALIST", "SALARY_MANAGER", "SYSTEM_ADMIN"})
     public ApiResponse<List<PositionResponse>> getPositions(
             @RequestParam(value = "firstOrgId", required = false) Long firstOrgId,
             @RequestParam(value = "secondOrgId", required = false) Long secondOrgId,
@@ -70,7 +70,7 @@ public class PositionController {
      * 人事专员、人事经理、薪酬专员和薪酬经理都可以访问（用于档案登记和薪酬标准登记）
      */
     @GetMapping("/{positionId}")
-    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SALARY_SPECIALIST", "SALARY_MANAGER"})
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SALARY_SPECIALIST", "SALARY_MANAGER", "SYSTEM_ADMIN"})
     public ApiResponse<PositionResponse> getPosition(@PathVariable("positionId") Long positionId) {
         Position position = positionService.getById(positionId);
         if (position == null) {

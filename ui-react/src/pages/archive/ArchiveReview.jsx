@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Select, DatePicker, message, Space, Tag, Row, Col, Divider } from 'antd'
+import { Table, Button, Modal, Form, Input, Select, DatePicker, message, Space, Tag, Row, Col, Divider, Image } from 'antd'
 import { CheckOutlined, EyeOutlined } from '@ant-design/icons'
 import { employeeArchiveService } from '../../services/employeeArchiveService'
 import { salaryStandardService } from '../../services/salaryStandardService'
@@ -97,6 +97,8 @@ const ArchiveReview = () => {
       const detailResponse = await employeeArchiveService.getDetail(record.archiveId)
       if (detailResponse.code === 200) {
         const detail = detailResponse.data
+        console.log('档案详情:', detail)
+        console.log('照片URL:', detail.photoUrl)
         setCurrentRecord(detail)
         // 设置表单初始值
         form.setFieldsValue({
@@ -293,6 +295,45 @@ const ArchiveReview = () => {
             <Col span={12}>
               <Form.Item name="name" label="姓名">
                 <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          
+          {/* 照片显示 */}
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item label="员工照片">
+                {currentRecord?.photoUrl ? (
+                  <>
+                    <div style={{ marginBottom: 8, fontSize: '12px', color: '#999' }}>
+                      URL: {currentRecord.photoUrl}
+                    </div>
+                    <Image
+                      width={150}
+                      src={currentRecord.photoUrl.startsWith('http') 
+                        ? currentRecord.photoUrl 
+                        : `http://localhost:8082${currentRecord.photoUrl}`}
+                      alt="员工照片"
+                      fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3MoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
+                      onError={(e) => {
+                        const imgSrc = currentRecord.photoUrl.startsWith('http') 
+                          ? currentRecord.photoUrl 
+                          : `http://localhost:8082${currentRecord.photoUrl}`
+                        console.error('图片加载失败:', {
+                          originalUrl: currentRecord.photoUrl,
+                          fullUrl: imgSrc,
+                          error: e
+                        })
+                        message.error('图片加载失败，请检查照片URL是否正确')
+                      }}
+                      onLoad={() => {
+                        console.log('图片加载成功:', currentRecord.photoUrl)
+                      }}
+                    />
+                  </>
+                ) : (
+                  <div style={{ color: '#999' }}>暂无照片</div>
+                )}
               </Form.Item>
             </Col>
           </Row>

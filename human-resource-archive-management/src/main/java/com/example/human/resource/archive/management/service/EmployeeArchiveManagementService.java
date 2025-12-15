@@ -591,13 +591,19 @@ public class EmployeeArchiveManagementService {
             throw new RuntimeException("档案不存在");
         }
 
-        // 生成文件名（使用档案编号）
+        // 生成文件名（使用档案编号，保持原始文件扩展名）
+        String originalFilename = file.getOriginalFilename();
+        String extension = originalFilename != null && originalFilename.contains(".") 
+                ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                : ".jpg";
         String fileName = archive.getArchiveNumber() != null 
-                ? archive.getArchiveNumber() + ".jpg"
+                ? archive.getArchiveNumber() + extension
                 : null;
 
         // 保存文件
+        System.out.println("开始上传照片 - 档案ID: " + archiveId + ", 档案编号: " + archive.getArchiveNumber() + ", 文件名: " + fileName);
         String photoUrl = fileStorageService.saveFile(file, "photos", fileName);
+        System.out.println("照片保存成功，URL: " + photoUrl);
 
         // 更新档案中的照片URL
         employeeArchiveService.updatePhotoUrl(archiveId, photoUrl);

@@ -44,7 +44,9 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // 配置请求授权
             .authorizeHttpRequests(auth -> auth
-                // 所有接口都需要认证
+                // 允许静态资源访问（照片文件）
+                .requestMatchers("/photofile/**", "/uploads/**").permitAll()
+                // 所有其他接口都需要认证
                 .anyRequest().authenticated()
             )
             // 添加JWT过滤器

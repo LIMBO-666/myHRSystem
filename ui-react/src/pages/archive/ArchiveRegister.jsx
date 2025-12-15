@@ -327,18 +327,36 @@ const ArchiveRegister = () => {
   }
 
   const handlePhotoChange = (info) => {
-    if (info.file.status === 'done' || info.file.originFileObj) {
-      setPhotoFile(info.file.originFileObj || info.file)
+    // 当文件选择时，保存文件对象
+    if (info.file.originFileObj) {
+      setPhotoFile(info.file.originFileObj)
+    } else if (info.file) {
+      setPhotoFile(info.file)
     }
+  }
+  
+  const normFile = (e) => {
+    if (Array.isArray(e)) {
+      return e
+    }
+    return e?.fileList
   }
 
   const handleSubmit = async (values) => {
     setLoading(true)
     try {
+      // 从表单值中获取照片文件
+      let photoFileToUpload = photoFile
+      if (values.photo && values.photo.length > 0) {
+        const file = values.photo[0]
+        photoFileToUpload = file.originFileObj || file
+      }
+      
       // 转换日期格式
       const submitData = {
         ...values,
-        birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : null
+        birthday: values.birthday ? values.birthday.format('YYYY-MM-DD') : null,
+        photo: undefined // 移除photo字段，不发送到后端
       }
       
       // 先创建档案
@@ -347,16 +365,24 @@ const ArchiveRegister = () => {
         const archiveId = response.data?.archiveId
         
         // 如果有照片，上传照片
-        if (photoFile && archiveId) {
+        if (photoFileToUpload && archiveId) {
           try {
-            await employeeArchiveService.uploadPhoto(archiveId, photoFile)
+            console.log('开始上传照片，档案ID:', archiveId, '文件:', photoFileToUpload)
+            const uploadResponse = await employeeArchiveService.uploadPhoto(archiveId, photoFileToUpload)
+            console.log('照片上传响应:', uploadResponse)
+            if (uploadResponse.code === 200) {
+              message.success('档案登记成功，照片已上传')
+            } else {
+              message.warning('档案登记成功，但照片上传失败：' + (uploadResponse.message || '未知错误'))
+            }
           } catch (error) {
             console.error('上传照片失败:', error)
-            message.warning('档案登记成功，但照片上传失败')
+            message.warning('档案登记成功，但照片上传失败：' + (error.message || '未知错误'))
           }
+        } else {
+          message.success('登记成功')
         }
         
-        message.success('登记成功')
         form.resetFields()
         setPhotoFile(null)
       } else {
@@ -408,6 +434,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="idNumber"
               label="身份证号码"
+              rules={[{ required: true, message: '请输入身份证号码' }]}
             >
               <Input placeholder="输入身份证号码" />
             </Form.Item>
@@ -416,6 +443,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="birthday"
               label="出生日期"
+              rules={[{ required: true, message: '请选择出生日期' }]}
             >
               <DatePicker style={{ width: '100%' }} placeholder="年/月/日" format="YYYY-MM-DD" />
             </Form.Item>
@@ -520,6 +548,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="jobTitle"
               label="职称"
+              rules={[{ required: true, message: '请选择职称' }]}
             >
               <Select placeholder="选择职称" onChange={handleJobTitleChange}>
                 <Select.Option value="JUNIOR">初级</Select.Option>
@@ -532,6 +561,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="salaryStandardId"
               label="薪酬标准"
+              rules={[{ required: true, message: '请确认薪酬标准' }]}
             >
               <Input disabled placeholder="根据职位和职称自动匹配" />
             </Form.Item>
@@ -543,16 +573,9 @@ const ArchiveRegister = () => {
         <Row gutter={16}>
           <Col span={8}>
             <Form.Item
-              name="birthday"
-              label="出生日期"
-            >
-              <DatePicker style={{ width: '100%' }} placeholder="年/月/日" format="YYYY-MM-DD" />
-            </Form.Item>
-          </Col>
-          <Col span={8}>
-            <Form.Item
               name="ethnicity"
               label="民族"
+              rules={[{ required: true, message: '请选择民族' }]}
             >
               <Select placeholder="选择民族">
                 {ethnicityOptions.map(ethnicity => (
@@ -567,6 +590,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="educationLevel"
               label="学历"
+              rules={[{ required: true, message: '请选择学历' }]}
             >
               <Select placeholder="选择学历">
                 {educationOptions.map(education => (
@@ -584,6 +608,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="email"
               label="Email"
+              rules={[{ required: true, message: '请输入Email' }]}
             >
               <Input placeholder="输入Email地址" />
             </Form.Item>
@@ -592,6 +617,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="phone"
               label="电话"
+              rules={[{ required: true, message: '请输入联系电话' }]}
             >
               <Input placeholder="输入联系电话" />
             </Form.Item>
@@ -600,6 +626,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="mobile"
               label="手机"
+              rules={[{ required: true, message: '请输入手机号码' }]}
             >
               <Input placeholder="输入手机号码" />
             </Form.Item>
@@ -611,6 +638,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="address"
               label="住址"
+              rules={[{ required: true, message: '请输入住址' }]}
             >
               <Input placeholder="输入联系地址" />
             </Form.Item>
@@ -619,6 +647,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="postalCode"
               label="邮编"
+              rules={[{ required: true, message: '请输入邮政编码' }]}
             >
               <Input placeholder="输入邮政编码" />
             </Form.Item>
@@ -630,6 +659,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="placeOfBirth"
               label="出生地"
+              rules={[{ required: true, message: '请输入出生地' }]}
             >
               <Input placeholder="输入出生地" />
             </Form.Item>
@@ -638,6 +668,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="qq"
               label="QQ"
+              rules={[{ required: true, message: '请输入QQ号码' }]}
             >
               <Input placeholder="输入QQ号码" />
             </Form.Item>
@@ -646,6 +677,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="religiousBelief"
               label="宗教信仰"
+              rules={[{ required: true, message: '请输入宗教信仰' }]}
             >
               <Input placeholder="输入宗教信仰" />
             </Form.Item>
@@ -657,6 +689,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="politicalStatus"
               label="政治面貌"
+              rules={[{ required: true, message: '请输入政治面貌' }]}
             >
               <Input placeholder="输入政治面貌" />
             </Form.Item>
@@ -665,6 +698,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="major"
               label="学历专业"
+              rules={[{ required: true, message: '请输入学历专业' }]}
             >
               <Input placeholder="输入学历专业" />
             </Form.Item>
@@ -673,6 +707,7 @@ const ArchiveRegister = () => {
             <Form.Item
               name="hobby"
               label="爱好"
+              rules={[{ required: true, message: '请输入爱好' }]}
             >
               <Input placeholder="输入爱好" />
             </Form.Item>
@@ -684,14 +719,21 @@ const ArchiveRegister = () => {
             <Form.Item
               name="photo"
               label="员工照片"
+              valuePropName="fileList"
+              getValueFromEvent={normFile}
+              rules={[{ required: true, message: '请上传员工照片' }]}
             >
               <Upload
                 beforeUpload={() => false}
                 onChange={handlePhotoChange}
                 maxCount={1}
                 accept="image/*"
+                listType="picture-card"
               >
-                <Button icon={<UploadOutlined />}>上传照片</Button>
+                <div>
+                  <UploadOutlined />
+                  <div style={{ marginTop: 8 }}>上传照片</div>
+                </div>
               </Upload>
             </Form.Item>
           </Col>
@@ -700,6 +742,7 @@ const ArchiveRegister = () => {
         <Form.Item
           name="personalResume"
           label="个人履历"
+          rules={[{ required: true, message: '请输入个人履历' }]}
         >
           <TextArea rows={4} placeholder="输入个人履历（大段文本）" />
         </Form.Item>

@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/organizations")
 @RequiredArgsConstructor
-@RequireRole({"HR_MANAGER"})
+@RequireRole({"HR_MANAGER", "SYSTEM_ADMIN"})
 public class OrganizationController {
 
     private final OrganizationService organizationService;
@@ -33,7 +33,7 @@ public class OrganizationController {
      * 人事专员和人事经理都可以访问（用于档案登记）
      */
     @GetMapping("/level1")
-    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SYSTEM_ADMIN"})
     public ApiResponse<List<OrganizationResponse>> getFirstLevelOrgs() {
         List<Organization> orgs = organizationService.getFirstLevelOrgs();
         // 只返回激活状态的机构
@@ -49,7 +49,7 @@ public class OrganizationController {
      * 人事专员和人事经理都可以访问（用于档案登记）
      */
     @GetMapping("/level2")
-    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SYSTEM_ADMIN"})
     public ApiResponse<List<OrganizationResponse>> getSecondLevelOrgs(@RequestParam(value = "parentId", required = false) Long parentId) {
         List<Organization> orgs;
         if (parentId != null) {
@@ -71,7 +71,7 @@ public class OrganizationController {
      * 人事专员和人事经理都可以访问（用于档案登记）
      */
     @GetMapping("/level3")
-    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SYSTEM_ADMIN"})
     public ApiResponse<List<OrganizationResponse>> getThirdLevelOrgs(@RequestParam(value = "parentId", required = false) Long parentId) {
         List<Organization> orgs;
         if (parentId != null) {
@@ -93,7 +93,7 @@ public class OrganizationController {
      * 人事专员和人事经理都可以访问（用于档案登记）
      */
     @GetMapping("/level2/all")
-    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SYSTEM_ADMIN"})
     public ApiResponse<List<OrganizationResponse>> getAllSecondLevelOrgs() {
         List<Organization> orgs = organizationService.getByOrgLevel(2);
         // 只返回激活状态的机构
@@ -109,7 +109,7 @@ public class OrganizationController {
      * 人事专员和人事经理都可以访问（用于档案登记）
      */
     @GetMapping("/level3/all")
-    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SYSTEM_ADMIN"})
     public ApiResponse<List<OrganizationResponse>> getAllThirdLevelOrgs() {
         List<Organization> orgs = organizationService.getByOrgLevel(3);
         // 只返回激活状态的机构
@@ -125,7 +125,7 @@ public class OrganizationController {
      * 人事专员和人事经理都可以访问（用于档案登记）
      */
     @GetMapping("/level3/by-first")
-    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SYSTEM_ADMIN"})
     public ApiResponse<List<OrganizationResponse>> getThirdLevelOrgsByFirstOrgId(@RequestParam("firstOrgId") Long firstOrgId) {
         List<Organization> orgs = organizationService.getThirdLevelOrgsByFirstOrgId(firstOrgId);
         // 只返回激活状态的机构
@@ -141,7 +141,7 @@ public class OrganizationController {
      * 人事专员和人事经理都可以访问（用于档案登记）
      */
     @GetMapping("/{orgId}")
-    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SYSTEM_ADMIN"})
     public ApiResponse<OrganizationResponse> getOrgById(@PathVariable("orgId") Long orgId) {
         Organization org = organizationService.getById(orgId);
         if (org == null) {
@@ -292,7 +292,7 @@ public class OrganizationController {
      * 注意：这个方法会被上面的getOrgById覆盖，需要调整路径
      */
     @GetMapping("/detail/{orgId}")
-    @RequireRole({"HR_MANAGER", "HR_SPECIALIST"})
+    @RequireRole({"HR_MANAGER", "HR_SPECIALIST", "SYSTEM_ADMIN"})
     public ApiResponse<OrganizationResponse> getOrgDetailById(@PathVariable("orgId") Long orgId) {
         Organization org = organizationService.getById(orgId);
         if (org == null) {

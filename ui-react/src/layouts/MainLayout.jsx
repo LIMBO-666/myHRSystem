@@ -24,8 +24,8 @@ const MainLayout = () => {
   const getMenuItems = () => {
     const items = []
 
-    // 系统管理菜单（只有人力资源经理可见）
-    if (hasRole(['HR_MANAGER'])) {
+    // 系统管理菜单（系统管理员可见）
+    if (hasRole(['SYSTEM_ADMIN'])) {
       const systemMenu = {
         key: 'system',
         icon: <SettingOutlined />,
@@ -86,8 +86,8 @@ const MainLayout = () => {
     if (hasRole(['SALARY_SPECIALIST', 'SALARY_MANAGER'])) {
       salaryStandardMenu.children.push({ key: '/salary-standard-query', label: '标准查询' })
     }
-    // 薪酬项目管理：只有薪酬经理可以访问
-    if (hasRole(['SALARY_MANAGER'])) {
+    // 薪酬项目管理：系统管理员或薪酬经理可以访问
+    if (hasRole(['SYSTEM_ADMIN', 'SALARY_MANAGER'])) {
       salaryStandardMenu.children.push({ key: '/salary-item', label: '薪酬项目管理' })
     }
 
